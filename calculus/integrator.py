@@ -1,3 +1,4 @@
+import time
 from decimal import Decimal
 from enum import Enum
 
@@ -75,23 +76,22 @@ class Integrator:
         ran = output_range(self.difference_func(a, b), a, b, resolution)
         return (b - a) * (ran[1] - ran[0])
 
-    def integral_to_precision(self, a, b, precision):
+    def integral_to_precision(self, a, b, precision, resolution=4):
+        if resolution < 2:
+            raise Exception('Resolution may not be smaller than 2. A resolution'
+                            ' of 1 will never identify any error in the results'
+                            ' because this will only evaluate the function at'
+                            ' its endpoints.')
+        start = time.thread_time_ns()
         tolerance = Decimal('0.1') ** (precision + 1) / 2
         candidates = [[a, b]]
-        errors = [self.__get_max_error_for_interval(a, b, 4)]
+        errors = [self.__get_max_error_for_interval(a, b, resolution)]
         sample = []
         total_error = 0
-        iterations = 0
         while sum(errors) + total_error >= tolerance:
-            iterations = iterations + 1
-            if iterations > 20:
-                print(f'Current error is {sum(errors) + total_error} with '
-                      f'sample size {len(sample) + len(candidates) + 1} while '
-                      f'tolerance is {tolerance}.')
-                raise Exception('Failed to complete after twenty '
-                                'iterations.')
             new_candidates = []
             new_errors = []
+            largest_error = None
             for n in range(len(candidates)):
                 if (candidates[n][1] - candidates[n][0]) * tolerance \
                         > (b - a) * errors[n]:
@@ -99,7 +99,7 @@ class Integrator:
                     total_error = total_error + errors[n]
                 else:
                     extrema_for_interval = self.__get_difference_extrema(
-                        candidates[n][0], candidates[n][1], 4
+                        candidates[n][0], candidates[n][1], resolution
                     )
                     for m in range(1, len(extrema_for_interval)):
                         candidate = [
@@ -107,7 +107,7 @@ class Integrator:
                         ]
                         new_candidates.append(candidate)
                         new_errors.append(self.__get_max_error_for_interval(
-                                candidate[0], candidate[1], 4
+                                candidate[0], candidate[1], resolution
                         ))
             candidates = new_candidates
             errors = new_errors
@@ -119,11 +119,15 @@ class Integrator:
             integral = integral + (interval[1] - interval[0]) * (
                 self.cached_func(interval[0]) + self.cached_func(interval[1])
             ) / 2
+        ns_per_cache = (time.thread_time_ns() - start) / len(self.cache)
         print(
-            f'Estimated value is: {integral}'
-            f'\nIterations: {iterations}'
-            f'\nSample size: {len(sample) + 1}'
-            f'\nMax possible value: {integral + total_error}'
-            f'\nMin possible value: {integral - total_error}')
+            f'The time per cached value is '
+            f'{round(Decimal(ns_per_cache / 1000000), 3)}'
+            f' ms per evaluation.'
+        )
+        print(
+            f'The number of cached values per sample value is '
+            f'{round(len(self.cache) / (len(sample) + 1), 2)}'
+        )
         self.__reset_cache()
-        return integral
+        return integral, total_error
