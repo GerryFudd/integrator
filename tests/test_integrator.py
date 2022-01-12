@@ -83,3 +83,43 @@ class TestIntegrator(unittest.TestCase):
                 print(f'This represents growth by a factor of '
                       f'{round(duration / previous_duration, 1)}')
         assert precision >= 6
+
+    def test_calculate_elliptic_integrals(self):
+        def error_function(a, error):
+            return (
+                1 + a * error
+                - (1 + 2 * a * error - error ** 2) ** Decimal('0.5')
+            ) / (a ** 2 + 1)
+
+        def elliptic_function(a, x):
+            return 2 * (
+                (a ** 2 + (1 - a ** 2) * x ** 2) / (1 - x ** 2)
+            ) ** Decimal('0.5')
+
+        def get_elliptic_integrator(a):
+            return Integrator(
+                lambda x: elliptic_function(a, x),
+                Mode.DECREASING
+            )
+        elliptic_integrator_circle = get_elliptic_integrator(1)
+        assert round(
+            elliptic_integrator_circle.integral_to_precision(
+                0, 1, 2, resolution=2,
+                error_func_upper=lambda e: error_function(1, e)
+            )[0], 2
+        ) == Decimal('3.14')
+        elliptic_integrator_doubled = get_elliptic_integrator(2)
+        assert round(
+            elliptic_integrator_doubled.integral_to_precision(
+                0, 1, precision=2, resolution=2,
+                error_func_upper=lambda e: error_function(2, e)
+            )[0], 2
+        ) == Decimal('4.84')
+        assert round(
+            elliptic_integrator_doubled.integral_to_precision(
+                0, 1, precision=3, resolution=2,
+                error_func_upper=lambda e: error_function(2, e)
+            )[0], 3
+        ) == Decimal('4.844')
+        # The true value of 4 * EllipticE(0.75) is
+        # 4.8442241102738380992142515981959147059769591989433004125415581762
