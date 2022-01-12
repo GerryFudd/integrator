@@ -75,7 +75,10 @@ class Integrator:
         ran = output_range(self.difference_func(a, b), a, b, resolution)
         return (b - a) * (ran[1] - ran[0])
 
-    def integral_to_precision(self, a, b, precision, resolution=4, error_func_lower=lambda x:0, error_func_upper=lambda x:0):
+    def integral_to_precision(
+        self, a, b, precision, resolution=4,
+        error_func_lower=lambda x: 0, error_func_upper=lambda x: 0
+    ):
         self.__reset_cache()
         if resolution < 2:
             raise Exception('Resolution may not be smaller than 2. A resolution'
@@ -94,6 +97,11 @@ class Integrator:
         )]
         sample = []
         total_error = 0
+        if initial_candidate[0] > a:
+            total_error = total_error + allowed_error
+        if initial_candidate[1] < b:
+            total_error = total_error + allowed_error
+
         while sum(errors) + total_error >= tolerance:
             new_candidates = []
             new_errors = []
@@ -125,4 +133,4 @@ class Integrator:
                 self.cached_func(interval[0]) + self.cached_func(interval[1])
             ) / 2
         self.__reset_cache()
-        return integral, total_error
+        return round(integral, precision), total_error

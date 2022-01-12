@@ -55,9 +55,9 @@ def get_local_extrema(func, a, b, resolution=100):
         val = func(x)
         direction = val - last_val
 
-        if last_direction <= 0 and direction > 0:
+        if last_direction <= 0 < direction:
             local_extrema.append(last_x)
-        if last_direction >= 0 and direction < 0:
+        if direction < 0 <= last_direction:
             local_extrema.append(last_x)
         last_x = x
         last_val = val

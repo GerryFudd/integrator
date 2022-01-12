@@ -54,13 +54,13 @@ class TestIntegrator(unittest.TestCase):
     def test_calculate_circle_area_to_precision_one(self):
         integrator = Integrator(lambda x: 4 * (1 - x ** 2) ** Decimal('0.5'),
                                 Mode.DECREASING)
-        assert round(integrator.integral_to_precision(0, 1, 1, 2)[0], 1) \
+        assert integrator.integral_to_precision(0, 1, 1, 2)[0] \
                == Decimal('3.1')
 
     def test_calculate_circle_area_to_precision_five(self):
         integrator = Integrator(lambda x: 4 * (1 - x ** 2) ** Decimal('0.5'),
                                 Mode.DECREASING)
-        assert round(integrator.integral_to_precision(0, 1, 5, 2)[0], 5) == Decimal(
+        assert integrator.integral_to_precision(0, 1, 5, 2)[0] == Decimal(
             '3.14159')
 
     def test_calculate_circle_area_to_precision_timing(self):
@@ -72,10 +72,8 @@ class TestIntegrator(unittest.TestCase):
             previous_duration = duration
             precision = precision + 1
             start = time.thread_time_ns()
-            assert round(
-                integrator.integral_to_precision(0, 1, precision, 2)[0],
-                precision
-            ) == Decimal(str(round(pi, precision)))
+            assert integrator.integral_to_precision(0, 1, precision, 2)[0] \
+                   == Decimal(str(round(pi, precision)))
             duration = (time.thread_time_ns() - start) // 1000000
             print(f'Completed trial for precision {precision} in '
                   f'{duration} ms.')
@@ -91,6 +89,9 @@ class TestIntegrator(unittest.TestCase):
                 - (1 + 2 * a * error - error ** 2) ** Decimal('0.5')
             ) / (a ** 2 + 1)
 
+        # This is the function that is integrated from 0 to t to evaluate
+        # 2 * a * EllipticE(t, k)
+        # where k = 1 - 1 / a^2
         def elliptic_function(a, x):
             return 2 * (
                 (a ** 2 + (1 - a ** 2) * x ** 2) / (1 - x ** 2)
@@ -101,25 +102,20 @@ class TestIntegrator(unittest.TestCase):
                 lambda x: elliptic_function(a, x),
                 Mode.DECREASING
             )
+
         elliptic_integrator_circle = get_elliptic_integrator(1)
-        assert round(
-            elliptic_integrator_circle.integral_to_precision(
+        assert elliptic_integrator_circle.integral_to_precision(
                 0, 1, 2, resolution=2,
                 error_func_upper=lambda e: error_function(1, e)
-            )[0], 2
-        ) == Decimal('3.14')
+            )[0] == Decimal('3.14')
         elliptic_integrator_doubled = get_elliptic_integrator(2)
-        assert round(
-            elliptic_integrator_doubled.integral_to_precision(
+        assert elliptic_integrator_doubled.integral_to_precision(
                 0, 1, precision=2, resolution=2,
                 error_func_upper=lambda e: error_function(2, e)
-            )[0], 2
-        ) == Decimal('4.84')
-        assert round(
-            elliptic_integrator_doubled.integral_to_precision(
+            )[0] == Decimal('4.84')
+        assert elliptic_integrator_doubled.integral_to_precision(
                 0, 1, precision=3, resolution=2,
                 error_func_upper=lambda e: error_function(2, e)
-            )[0], 3
-        ) == Decimal('4.844')
-        # The true value of 4 * EllipticE(0.75) is
+            )[0] == Decimal('4.844')
+        # The true value of 2 * 2 * EllipticE(1 - 1 / 2^2) is
         # 4.8442241102738380992142515981959147059769591989433004125415581762
