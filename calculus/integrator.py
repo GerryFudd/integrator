@@ -36,9 +36,9 @@ class Integrator:
         if self.mode == Mode.FLUCTUATING:
             return output_range(self.cached_func, a, b)
         elif self.mode == Mode.INCREASING:
-            return *list(map(self.cached_func, [a, b])), [a], [b]
+            return list(map(self.cached_func, [a, b]))
         elif self.mode == Mode.DECREASING:
-            return *list(map(self.cached_func, [b, a])), [b], [a]
+            return list(map(self.cached_func, [b, a]))
         else:
             raise Exception(f'Mode {str(self.mode)} is not supported.')
 

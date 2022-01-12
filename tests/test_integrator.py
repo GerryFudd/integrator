@@ -72,8 +72,10 @@ class TestIntegrator(unittest.TestCase):
             previous_duration = duration
             precision = precision + 1
             start = time.thread_time_ns()
-            assert integrator.integral_to_precision(0, 1, precision, 2)[0] \
-                   == Decimal(str(round(pi, precision)))
+            value, error = integrator.integral_to_precision(0, 1, precision, 2)
+            assert value == Decimal(str(round(pi, precision)))
+            assert round(value + error, precision) == value
+            assert round(value - error, precision) == value
             duration = (time.thread_time_ns() - start) // 1000000
             print(f'Completed trial for precision {precision} in '
                   f'{duration} ms.')
