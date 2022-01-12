@@ -54,13 +54,13 @@ class TestIntegrator(unittest.TestCase):
     def test_calculate_circle_area_to_precision_one(self):
         integrator = Integrator(lambda x: 4 * (1 - x ** 2) ** Decimal('0.5'),
                                 Mode.DECREASING)
-        assert round(integrator.integral_to_precision(0, 1, 1)[0], 1) \
+        assert round(integrator.integral_to_precision(0, 1, 1, 2)[0], 1) \
                == Decimal('3.1')
 
     def test_calculate_circle_area_to_precision_five(self):
         integrator = Integrator(lambda x: 4 * (1 - x ** 2) ** Decimal('0.5'),
                                 Mode.DECREASING)
-        assert round(integrator.integral_to_precision(0, 1, 5)[0], 5) == Decimal(
+        assert round(integrator.integral_to_precision(0, 1, 5, 2)[0], 5) == Decimal(
             '3.14159')
 
     def test_calculate_circle_area_to_precision_timing(self):
@@ -68,14 +68,18 @@ class TestIntegrator(unittest.TestCase):
                                 Mode.DECREASING)
         duration = 0
         precision = 0
-        while duration < 3 and precision <= 8:
+        while duration < 1000 and precision <= 8:
+            previous_duration = duration
             precision = precision + 1
             start = time.thread_time_ns()
             assert round(
                 integrator.integral_to_precision(0, 1, precision, 2)[0],
                 precision
             ) == Decimal(str(round(pi, precision)))
-            duration = (time.thread_time_ns() - start) // 1000000000
+            duration = (time.thread_time_ns() - start) // 1000000
             print(f'Completed trial for precision {precision} in '
-                  f'{duration} seconds.')
-        assert precision >= 4
+                  f'{duration} ms.')
+            if previous_duration > 0:
+                print(f'This represents growth by a factor of '
+                      f'{round(duration / previous_duration, 1)}')
+        assert precision >= 6
