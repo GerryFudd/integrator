@@ -1,12 +1,10 @@
-import time
 from decimal import Decimal
-from math import pi
-import unittest
+from unittest import TestCase
 
 from calculus.integrator import Integrator, Mode
 
 
-class TestIntegrator(unittest.TestCase):
+class TestIntegrator(TestCase):
     def test_integrate_linear(self):
         result = Integrator(lambda x: 2 * x).integrate(0, 2, 4)
         assert result.trap == 4
@@ -63,27 +61,6 @@ class TestIntegrator(unittest.TestCase):
         assert integrator.integral_to_precision(0, 1, 5, 2)[0] == Decimal(
             '3.14159')
 
-    def test_calculate_circle_area_to_precision_timing(self):
-        integrator = Integrator(lambda x: 4 * (1 - x ** 2) ** Decimal('0.5'),
-                                Mode.DECREASING)
-        duration = 0
-        precision = 0
-        while duration < 1000 and precision <= 8:
-            previous_duration = duration
-            precision = precision + 1
-            start = time.thread_time_ns()
-            value, error = integrator.integral_to_precision(0, 1, precision, 2)
-            assert value == Decimal(str(round(pi, precision)))
-            assert round(value + error, precision) == value
-            assert round(value - error, precision) == value
-            duration = (time.thread_time_ns() - start) // 1000000
-            print(f'Completed trial for precision {precision} in '
-                  f'{duration} ms.')
-            if previous_duration > 0:
-                print(f'This represents growth by a factor of '
-                      f'{round(duration / previous_duration, 1)}')
-        assert precision >= 6
-
     def test_calculate_elliptic_integrals(self):
         def error_function(a, error):
             return (
@@ -115,9 +92,5 @@ class TestIntegrator(unittest.TestCase):
                 0, 1, precision=2, resolution=2,
                 error_func_upper=lambda e: error_function(2, e)
             )[0] == Decimal('4.84')
-        assert elliptic_integrator_doubled.integral_to_precision(
-                0, 1, precision=3, resolution=2,
-                error_func_upper=lambda e: error_function(2, e)
-            )[0] == Decimal('4.844')
         # The true value of 2 * 2 * EllipticE(1 - 1 / 2^2) is
         # 4.8442241102738380992142515981959147059769591989433004125415581762
