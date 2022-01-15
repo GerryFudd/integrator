@@ -1,86 +1,48 @@
-from calculus.utils import maximum
-
-
-class Polynomial:
-    def __init__(self, *coefficients):
-        self.coefficients = list(coefficients)
-
-    def __eq__(self, other):
-        if not isinstance(other, Polynomial):
-            return False
-        return self.coefficients == other.coefficients
-
-    def __str__(self):
-        result = []
-        result.pop()
-        for n in range(len(self.coefficients)):
-            if self.coefficients[n] == 0:
-                pass
-            elif n == 0:
-                result.append(f'{self.coefficients[0]}')
-            elif n == 1:
-                result.append(f'{self.coefficients[1]}x')
-            elif n >= 10:
-                result.append(f'{self.coefficients[n]}x^({n})')
-            else:
-                result.append(f'{self.coefficients[n]}x^{n}')
-        return ' + '.join(result)
-
-    def __repr__(self):
-        return f'Polynomial(coefficients={self.coefficients})'
-
-    def __reduce__(self):
-        while self.coefficients[-1] == 0:
-            self.coefficients.pop()
-        return self
-
-    def plus(self, summand):
-        coefficients = []
-        for n in range(maximum(
-            len(self.coefficients), len(summand.coefficients)
-        )):
-            if n >= len(self.coefficients):
-                coefficients.append(summand.coefficients[n])
-            elif n >= len(summand.coefficients):
-                coefficients.append(self.coefficients[n])
-            else:
-                coefficients.append(
-                    self.coefficients[n] + summand.coefficients[n]
-                )
-        return Polynomial(*coefficients).__reduce__()
-
-    def times(self, multiplicand):
-        self.__reduce__()
-        multiplicand.__reduce__()
-        coefficients = []
-        for n in range(len(self.coefficients)):
-            for m in range(len(multiplicand.coefficients)):
-                i = n + m
-                if i < len(coefficients):
-                    coefficients[i] = coefficients[i] \
-                                      + self.coefficients[n] \
-                                      * multiplicand.coefficients[m]
-                else:
-                    coefficients.insert(
-                        i, self.coefficients[n] * multiplicand.coefficients[m]
-                    )
-        return Polynomial(*coefficients)
-
-
 class Multipolynomial:
     def __init__(self, variables, coefficients):
         self.variables = variables
         self.coefficients = coefficients
 
+    def __get_re_mapper(self, other_variables):
+        dim = len(self.variables)
+        if len(other_variables) != dim:
+            return None
+        variable_mapping = {}
+        remaining = list(range(dim))
+        for i in range(dim):
+            to_remove = None
+            for j in remaining:
+                if self.variables[i] == other_variables[j]:
+                    variable_mapping[i] = j
+                    to_remove = j
+                    break
+            if to_remove is not None:
+                remaining.remove(to_remove)
+        return variable_mapping
+
     def __eq__(self, other):
         if not isinstance(other, Multipolynomial):
             return False
-        other_sorted = Multipolynomial(other.variables, other.coefficients) \
-            .__sort()
-        self_sorted = Multipolynomial(self.variables, self.coefficients) \
-            .__sort()
-        return self_sorted.variables == other_sorted.variables \
-            and self_sorted.coefficients == other_sorted.coefficients
+        # If the parameters are equal, then the instnaces are
+        if self.variables == other.variables and \
+            self.coefficients == other.coefficients:
+            return True
+
+        # The polynomials are also equal if they use the same variables
+        # in a different order
+        dim = len(self.variables)
+        if dim != len(other.variables):
+            return False
+        variable_mapping = self.__get_re_mapper(other.variables)
+        position = [0] * dim
+        while other.__has(position):
+            mapped_position = []
+            for x in range(dim):
+                mapped_position.append(position[variable_mapping[x]])
+            if other.__get(position) != self.__get(mapped_position):
+                return False
+            position = other.__next(position)
+        return True
 
     def __get(self, position):
         current = self.coefficients
@@ -177,12 +139,7 @@ class Multipolynomial:
     def __sort(self):
         dim = len(self.variables)
         sorted_vars = sorted(self.variables)
-        re_mapper = {}
-        for i in range(dim):
-            for j in range(dim):
-                if self.variables[i] == sorted_vars[j]:
-                    re_mapper[i] = j
-                    break
+        re_mapper = self.__get_re_mapper(sorted_vars)
         position = [0] * dim
         re_mapped_coefficients = []
         while self.__has(position):

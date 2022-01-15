@@ -1,9 +1,9 @@
 from unittest import TestCase
 
-from elementary_functions.polynomials import Polynomial, Multipolynomial
+from elementary_functions.polynomial import Polynomial
 
 
-class TestPolynomials(TestCase):
+class TestPolynomial(TestCase):
     def test_polynomial_addition(self):
         first = Polynomial(2, 1, 4)
         second = Polynomial(1, 5, 7)
@@ -30,19 +30,4 @@ class TestPolynomials(TestCase):
         assert first.times(second) == Polynomial(2, 11, 23, 27, 28)
 
 
-class TestMultipolynomial(TestCase):
-    def test_multipolynomial_str(self):
-        assert str(Multipolynomial(['a', 'b'], [[1, 0, -1], [0, 2], [-1]])) \
-               == '1 + -b^2 + 2ab + -a^2'
 
-    def test_multipolynomial_eq(self):
-        assert Multipolynomial(['a', 'b'], [[1, 2], [3, 4]]) \
-                == Multipolynomial(['b', 'a'], [[1, 3], [2, 4]])
-
-    def test_multipolynomial_sum(self):
-        first = Multipolynomial(['a', 'b'], [[1, 0, -1], [0, 2], [-1]])
-        second = Multipolynomial(['a', 'b'], [[0, 1, 3], [1, -1], [2]])
-        assert first.plus(second) == Multipolynomial(
-            ['a', 'b'],
-            [[1, 1, 2], [1, 1], [1]]
-        )

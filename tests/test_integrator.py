@@ -55,26 +55,29 @@ class TestIntegrator(TestCase):
         assert integrator.integral_to_precision(0, 1, 1, 2)[0] \
                == Decimal('3.1')
 
-    def test_calculate_circle_area_to_precision_five(self):
-        integrator = Integrator(lambda x: 4 * (1 - x ** 2) ** Decimal('0.5'),
-                                Mode.DECREASING)
-        assert integrator.integral_to_precision(0, 1, 5, 2)[0] == Decimal(
-            '3.14159')
-
     def test_calculate_elliptic_integrals(self):
+        # The result of integrating this function from 0 to 1 represents the
+        # perimeter of an ellipse whose minor axis has length 1 and whose major
+        # axis has length "a".
+        # The integral from 0 to t of this function is
+        # 2 * a * EllipticE(t, k)
+        # where k = 1 - 1 / a^2
+        def elliptic_function(a, s):
+            return 2 * (
+                (a ** 2 + (1 - a ** 2) * s ** 2) / (1 - s ** 2)
+            ) ** Decimal('0.5')
+
+        # Since the above function is undefined at a = 1 this error function
+        # returns a distance "d" from 1 such that the integral from "1 - d" to
+        # "1" of the above function is less than "error".
+        # It uses a geometric notion to say that the arc length from
+        # "x = a - ad" to "x = a" along the path of the ellipse is shorter than
+        # the path that goes from (x, y) to (a, y) and then (a, 0).
         def error_function(a, error):
             return (
                 1 + a * error
                 - (1 + 2 * a * error - error ** 2) ** Decimal('0.5')
             ) / (a ** 2 + 1)
-
-        # This is the function that is integrated from 0 to t to evaluate
-        # 2 * a * EllipticE(t, k)
-        # where k = 1 - 1 / a^2
-        def elliptic_function(a, x):
-            return 2 * (
-                (a ** 2 + (1 - a ** 2) * x ** 2) / (1 - x ** 2)
-            ) ** Decimal('0.5')
 
         def get_elliptic_integrator(a):
             return Integrator(
@@ -82,15 +85,10 @@ class TestIntegrator(TestCase):
                 Mode.DECREASING
             )
 
-        elliptic_integrator_circle = get_elliptic_integrator(1)
-        assert elliptic_integrator_circle.integral_to_precision(
-                0, 1, 2, resolution=2,
-                error_func_upper=lambda e: error_function(1, e)
-            )[0] == Decimal('3.14')
         elliptic_integrator_doubled = get_elliptic_integrator(2)
         assert elliptic_integrator_doubled.integral_to_precision(
-                0, 1, precision=2, resolution=2,
+                0, 1, precision=1, resolution=2,
                 error_func_upper=lambda e: error_function(2, e)
-            )[0] == Decimal('4.84')
+            )[0] == Decimal('4.8')
         # The true value of 2 * 2 * EllipticE(1 - 1 / 2^2) is
         # 4.8442241102738380992142515981959147059769591989433004125415581762
