@@ -1,16 +1,6 @@
 from decimal import Decimal
 
-
-def minimum(a, b):
-    if a <= b:
-        return a
-    return b
-
-
-def maximum(a, b):
-    if a >= b:
-        return a
-    return b
+from number_line.utils import minimum, maximum
 
 
 def output_range(func, lower, upper, resolution=100):

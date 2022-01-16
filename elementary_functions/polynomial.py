@@ -29,7 +29,7 @@ class Polynomial:
     def __repr__(self):
         return f'Polynomial(coefficients={self.coefficients})'
 
-    def __reduce__(self):
+    def __reduce(self):
         while self.coefficients[-1] == 0:
             self.coefficients.pop()
         return self
@@ -47,11 +47,11 @@ class Polynomial:
                 coefficients.append(
                     self.coefficients[n] + summand.coefficients[n]
                 )
-        return Polynomial(*coefficients).__reduce__()
+        return Polynomial(*coefficients).__reduce()
 
     def times(self, multiplicand):
-        self.__reduce__()
-        multiplicand.__reduce__()
+        self.__reduce()
+        multiplicand.__reduce()
         coefficients = []
         for n in range(len(self.coefficients)):
             for m in range(len(multiplicand.coefficients)):

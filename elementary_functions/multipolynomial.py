@@ -1,15 +1,18 @@
+from number_line.utils import maximum
+from .utils import IterableTable, var_display, resolve_position
+
+
 class Multipolynomial:
     def __init__(self, variables, coefficients):
         self.variables = variables
-        self.coefficients = coefficients
+        self.coefficients = IterableTable(len(variables), coefficients)
 
     def __get_re_mapper(self, other_variables):
-        dim = len(self.variables)
-        if len(other_variables) != dim:
+        if len(other_variables) != self.coefficients.dim:
             return None
         variable_mapping = {}
-        remaining = list(range(dim))
-        for i in range(dim):
+        remaining = list(range(self.coefficients.dim))
+        for i in range(self.coefficients.dim):
             to_remove = None
             for j in remaining:
                 if self.variables[i] == other_variables[j]:
@@ -25,134 +28,82 @@ class Multipolynomial:
             return False
         # If the parameters are equal, then the instnaces are
         if self.variables == other.variables and \
-            self.coefficients == other.coefficients:
+                self.coefficients == other.coefficients:
             return True
 
         # The polynomials are also equal if they use the same variables
         # in a different order
-        dim = len(self.variables)
-        if dim != len(other.variables):
+        if self.coefficients.dim != other.coefficients.dim:
             return False
         variable_mapping = self.__get_re_mapper(other.variables)
-        position = [0] * dim
-        while other.__has(position):
+        if len(variable_mapping) < self.coefficients.dim:
+            return False
+        for position, value in other.coefficients:
             mapped_position = []
-            for x in range(dim):
+            for x in range(self.coefficients.dim):
                 mapped_position.append(position[variable_mapping[x]])
-            if other.__get(position) != self.__get(mapped_position):
+            if value != self.__get(mapped_position):
                 return False
-            position = other.__next(position)
         return True
 
     def __get(self, position):
-        current = self.coefficients
-        for i in position:
-            if not isinstance(current, list):
-                return None
-            if i >= len(current):
-                return None
-            current = current[i]
-        return current
+        return self.coefficients.get(position)
 
     def __has(self, position):
-        if position is None:
-            return False
-        current = self.coefficients
-        for i in position:
-            if not isinstance(current, list):
-                return False
-            if i >= len(current):
-                return False
-            current = current[i]
-        return True
+        return self.coefficients.has(position)
 
     def __next(self, position):
-        i = len(position) - 1
-        candidate = position.copy()
-        while i >= 0:
-            candidate[i] = candidate[i] + 1
-            if self.__has(candidate):
-                return candidate
-            candidate[i] = 0
-            i = i - 1
-        return None
-
-    @staticmethod
-    def __var_display(variable, power):
-        if power == 0:
-            return ''
-        if power == 1:
-            return variable
-        if power >= 10:
-            return f'{variable}^({power})'
-        return f'{variable}^{power}'
-
-    @staticmethod
-    def __resolve_position(position_a, position_b):
-        if position_a == position_b:
-            return position_a
-        if position_a is None:
-            return position_b
-        if position_b is None:
-            return position_a
-        if len(position_a) != len(position_b):
-            raise Exception('Can\'t compare positions of differing dimension.')
-
-        for i in range(len(position_a)):
-            # If one position has a smaller index anywhere starting from the
-            # front, then it is earlier
-            if position_a[i] < position_b[i]:
-                return position_a
-            if position_b[i] < position_a[i]:
-                return position_b
-        raise Exception('Positions should be identical, but didn\'t come out '
-                        f'equal\n{position_a}\n{position_b}')
+        return self.coefficients.next(position)
 
     def __str__(self):
         if len(self.variables) == 0:
             return ''
         result = []
-        position = [0] * len(self.variables)
 
-        while position:
-            value = self.__get(position)
-            if value:
-                new_term = ''
-                if value == -1:
-                    new_term = new_term + '-'
-                elif value != 1:
-                    new_term = new_term + f'{value}'
-                for i in range(len(position)):
-                    new_term = new_term + self.__var_display(
-                        self.variables[i], position[i]
-                    )
-                if new_term == '':
-                    new_term = '1'
-                result.append(new_term)
-            position = self.__next(position)
+        for position, value in self.coefficients:
+            if value == 0:
+                continue
+            new_term = ''
+            if value == -1:
+                new_term = new_term + '-'
+            elif value != 1:
+                new_term = new_term + f'{value}'
+            for i in range(self.coefficients.dim):
+                new_term = new_term + var_display(
+                    self.variables[i], position[i]
+                )
+            if new_term == '':
+                new_term = '1'
+            result.append(new_term)
         return ' + '.join(result)
 
     def __repr__(self):
         return f'Multipolynomial(variables={self.variables}, ' \
                f'coefficients={self.coefficients})'
 
-    def __sort(self):
-        dim = len(self.variables)
-        sorted_vars = sorted(self.variables)
-        re_mapper = self.__get_re_mapper(sorted_vars)
-        position = [0] * dim
-        re_mapped_coefficients = []
-        while self.__has(position):
-            target = re_mapped_coefficients
-            for k in range(dim - 1):
-                re_mapped_pos_k = position[re_mapper[k]]
-                while len(target) <= re_mapped_pos_k:
-                    target.append([])
-                target = target[re_mapped_pos_k]
-            target.insert(position[re_mapper[dim - 1]], self.__get(position))
-            position = self.__next(position)
-        self.variables = sorted_vars
-        self.coefficients = re_mapped_coefficients
+    def __reduce(self):
+        variables_to_remove = []
+        for i in range(self.coefficients.dim):
+            # variable_index counts backwards intentionally
+            # We first reduce the most buried lists in the table (representing
+            # the last variable) by removing trailing 0's. Then we walk back
+            # to each previous variable and see if it needs to be removed.
+            # When a variable is removed, only the ones that follow it are
+            # shifted, so we capture the variable indexes in reverse order
+            # and remove them that way.
+            variable_index = self.coefficients.dim - i - 1
+            max_len = 0
+            for position, value in IterableTable(variable_index,
+                                                 self.coefficients.table):
+                while isinstance(value, list) and len(value) > 0 \
+                        and (value[-1] == 0 or value[-1] == []):
+                    value.pop()
+                max_len = maximum(max_len, len(value))
+            if max_len <= 1:
+                variables_to_remove.append(variable_index)
+        for j in variables_to_remove:
+            del self.variables[j]
+            self.coefficients.remove_dim(j)
         return self
 
     def plus(self, summand):
@@ -176,8 +127,8 @@ class Multipolynomial:
                 current.append(a)
             else:
                 current.append(a + b)
-            position = self.__resolve_position(
+            position = resolve_position(
                 self.__next(position),
                 summand.__next(position)
             )
-        return Multipolynomial(self.variables, coefficients)
+        return Multipolynomial(self.variables, coefficients).__reduce()
