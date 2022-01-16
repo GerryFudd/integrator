@@ -106,3 +106,9 @@ class TestMultipolynomial(TestCase):
                 [[22, 26, 30], [34, 38, 42], [46, 50, 54]]
             ]
         )
+
+    def test_multipolynomial_sum_different_variables(self):
+        assert Multipolynomial(['a'], [1, 2])\
+            .plus(Multipolynomial(['b'], [3, 4])) == Multipolynomial(
+            ['a', 'b'], [[4, 4], [2]]
+        )

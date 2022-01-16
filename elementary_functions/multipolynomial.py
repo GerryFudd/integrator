@@ -125,8 +125,18 @@ class Multipolynomial:
                     self.variables,
                     re_mapped_coefficients.table
                 ))
-            raise Exception('Addition with mismatched variables is not '
-                            'supported.')
+
+            extended_self = self.copy()
+            extended_summand = summand.copy()
+            for v in summand.variables:
+                if not (v in extended_self.variables):
+                    extended_self.variables.append(v)
+                    extended_self.coefficients.add_dim()
+            for v in self.variables:
+                if not (v in extended_summand.variables):
+                    extended_summand.variables.append(v)
+                    extended_summand.coefficients.add_dim()
+            return extended_self.plus(extended_summand)
         coefficients = []
         position = [0] * len(self.variables)
         while self.__has(position) or summand.__has(position):

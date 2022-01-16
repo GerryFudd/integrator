@@ -30,21 +30,17 @@ class IterableTable:
     def __repr__(self):
         return f'IterableTable(dim={self.dim}, table={self.table})'
 
+    def copy(self):
+        return IterableTable(self.dim, self.table.copy())
+
     def re_map_indices(self, re_mapper):
-        new_table = []
+        new_table = IterableTable(self.dim, [])
         for position, value in self:
-            current = new_table
             mapped_position = [0] * self.dim
             for i in range(self.dim):
                 mapped_position[re_mapper[i]] = position[i]
-            for n in mapped_position[:-1]:
-                while len(current) <= n:
-                    current.append([])
-                current = current[n]
-            while len(current) <= mapped_position[-1]:
-                current.append(0)
-            current[mapped_position[-1]] = value
-        self.table = new_table
+            new_table.set(mapped_position, value)
+        self.table = new_table.table
 
     def remove_dim(self, i):
         if i < 0 or self.dim <= i:
@@ -71,6 +67,11 @@ class IterableTable:
                     val[j] = val[j][0]
         self.dim = self.dim - 1
 
+    def add_dim(self):
+        for position, value in self.copy():
+            self.set(position, [value])
+        self.dim = self.dim + 1
+
     def get(self, position):
         if position is None:
             return None
@@ -80,6 +81,16 @@ class IterableTable:
                 return None
             current = current[n]
         return current
+
+    def set(self, position, value):
+        current = self.table
+        for n in position[:-1]:
+            while len(current) <= n:
+                current.append([])
+            current = current[n]
+        while len(current) <= position[-1]:
+            current.append(0)
+        current[position[-1]] = value
 
     def has(self, position):
         if position is None:
