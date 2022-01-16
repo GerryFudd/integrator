@@ -47,11 +47,12 @@ class IterableTable:
             raise IndexError(f'The index {i} is not a removable index for a'
                              f'table with dimension {self.dim}')
         if i == 0:
-            if len(self.table) != 1:
+            if len(self.table) > 1:
                 raise Exception(f'The index 0 is not removable because '
                                 f'the table {self.table} is not comprised of '
                                 f'a single row.')
-            self.table = self.table[0]
+            elif len(self.table) == 1:
+                self.table = self.table[0]
         else:
             for pos, val in IterableTable(i - 1, self.table):
                 val_size = len(val)

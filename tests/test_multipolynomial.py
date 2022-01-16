@@ -74,6 +74,17 @@ class TestMultipolynomial(TestCase):
         assert ident.plus(multipoly) == multipoly
         assert ident.plus(ident) == ident
 
+    def test_multipolynomial_sum_with_inverse(self):
+        multipoly = Multipolynomial(['a', 'b', 'c'], [
+            [[1, 2], [3, 4]], [[5, 6], [7, 8]]
+        ])
+        inverse = Multipolynomial(['a', 'b', 'c'], [
+            [[-1, -2], [-3, -4]], [[-5, -6], [-7, -8]]
+        ])
+        ident = Multipolynomial([], [])
+        assert multipoly.plus(inverse) == ident
+        assert inverse.plus(multipoly) == ident
+
     def test_multipolynomial_sum_different_order(self):
         first = Multipolynomial(['a', 'b'], [[1, 0, -1], [0, 2], [-1]])
         second = Multipolynomial(['b', 'a'], [[0, 1, 2], [1, -1], [3]])
