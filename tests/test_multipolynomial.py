@@ -64,6 +64,16 @@ class TestMultipolynomial(TestCase):
             [[3, 5], [10, 13]]
         )
 
+    def test_multipolynomial_sum_with_identity(self):
+        # 1 + 2c + 3b + 4bc + 5a + 6ac + 7ab + 8abc
+        multipoly = Multipolynomial(['a', 'b', 'c'], [
+            [[1, 2], [3, 4]], [[5, 6], [7, 8]]
+        ])
+        ident = Multipolynomial([], [])
+        assert multipoly.plus(ident) == multipoly
+        assert ident.plus(multipoly) == multipoly
+        assert ident.plus(ident) == ident
+
     def test_multipolynomial_sum_different_order(self):
         first = Multipolynomial(['a', 'b'], [[1, 0, -1], [0, 2], [-1]])
         second = Multipolynomial(['b', 'a'], [[0, 1, 2], [1, -1], [3]])

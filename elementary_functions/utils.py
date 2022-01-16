@@ -68,8 +68,11 @@ class IterableTable:
         self.dim = self.dim - 1
 
     def add_dim(self):
-        for position, value in self.copy():
-            self.set(position, [value])
+        if self.dim == 0:
+            self.table = [0]
+        else:
+            for position, value in self.copy():
+                self.set(position, [value])
         self.dim = self.dim + 1
 
     def get(self, position):
@@ -83,6 +86,9 @@ class IterableTable:
         return current
 
     def set(self, position, value):
+        if len(position) == 0:
+            self.table = value
+            return
         current = self.table
         for n in position[:-1]:
             while len(current) <= n:
