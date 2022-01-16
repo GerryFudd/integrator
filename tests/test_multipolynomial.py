@@ -64,6 +64,21 @@ class TestMultipolynomial(TestCase):
             [[3, 5], [10, 13]]
         )
 
+    def test_multipolynomial_sum_with_collapsed_list(self):
+        # 1 + 2c + 3b + 4bc + 5a + 6ac + 7ab + 8abc
+        first = Multipolynomial(['a', 'b', 'c'], [
+            [[1, 2], [3, 4]], [[5, 6], [7, 8]]
+        ])
+        # 2 + 3c + -3b + -4bc + 5a + 7ac + -7ab + -8abc
+        second = Multipolynomial(['a', 'b', 'c'], [
+            [[-1, -2], [-3, -4]], [[5, 7], [-7, -8]]
+        ])
+        # 3 + 5c + 10a + 13ac
+        assert first.plus(second) == Multipolynomial(
+            ['a', 'c'],
+            [[], [10, 13]]
+        )
+
     def test_multipolynomial_sum_with_identity(self):
         # 1 + 2c + 3b + 4bc + 5a + 6ac + 7ab + 8abc
         multipoly = Multipolynomial(['a', 'b', 'c'], [

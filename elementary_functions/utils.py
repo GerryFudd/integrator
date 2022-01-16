@@ -62,10 +62,12 @@ class IterableTable:
                                         f'the value {val} at position {[*pos, j]}'
                                         f'is not a list.')
                     if len(val[j]) > 1:
-                        raise Exception(f'The index {i} is not removable because'
-                                        f'the value {val[j]} at position '
-                                        f'{[*pos, j]} has more than one element.')
-                    val[j] = val[j][0]
+                        raise Exception(f'The index {i} is not removable '
+                                        f'because the value {val[j]} at '
+                                        f'position {[*pos, j]} has more than '
+                                        f'one element.')
+                    elif len(val[j]) == 1:
+                        val[j] = val[j][0]
         self.dim = self.dim - 1
 
     def add_dim(self):
