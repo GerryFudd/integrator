@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from number_line.utils import minimum, maximum
+from general.utils import minimum, maximum
 
 
 def output_range(func, lower, upper, resolution=100):

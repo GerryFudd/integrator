@@ -30,6 +30,22 @@ class IterableTable:
     def __repr__(self):
         return f'IterableTable(dim={self.dim}, table={self.table})'
 
+    def re_map_indices(self, re_mapper):
+        new_table = []
+        for position, value in self:
+            current = new_table
+            mapped_position = [0] * self.dim
+            for i in range(self.dim):
+                mapped_position[re_mapper[i]] = position[i]
+            for n in mapped_position[:-1]:
+                while len(current) <= n:
+                    current.append([])
+                current = current[n]
+            while len(current) <= mapped_position[-1]:
+                current.append(0)
+            current[mapped_position[-1]] = value
+        self.table = new_table
+
     def remove_dim(self, i):
         if i < 0 or self.dim <= i:
             raise IndexError(f'The index {i} is not a removable index for a'

@@ -1,4 +1,4 @@
-from number_line.utils import maximum
+from general.utils import maximum
 from .utils import IterableTable, var_display, resolve_position
 
 
@@ -106,8 +106,25 @@ class Multipolynomial:
             self.coefficients.remove_dim(j)
         return self
 
+    def copy(self):
+        return Multipolynomial(
+            self.variables.copy(), self.coefficients.table.copy()
+        )
+
     def plus(self, summand):
         if self.variables != summand.variables:
+            if set(self.variables) == set(summand.variables):
+                re_mapper = summand.__get_re_mapper(self.variables)
+                re_mapped_coefficients = IterableTable(
+                    summand.coefficients.dim,
+                    summand.coefficients.table.copy()
+                )
+                re_mapped_coefficients.re_map_indices(re_mapper)
+
+                return self.plus(Multipolynomial(
+                    self.variables,
+                    re_mapped_coefficients.table
+                ))
             raise Exception('Addition with mismatched variables is not '
                             'supported.')
         coefficients = []
