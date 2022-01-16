@@ -8,11 +8,11 @@ class Multipolynomial:
         self.coefficients = IterableTable(len(variables), coefficients)
 
     def __get_re_mapper(self, other_variables):
-        if len(other_variables) != self.coefficients.dim:
+        if len(other_variables) != self.dim:
             return None
         variable_mapping = {}
-        remaining = list(range(self.coefficients.dim))
-        for i in range(self.coefficients.dim):
+        remaining = list(range(self.dim))
+        for i in range(self.dim):
             to_remove = None
             for j in remaining:
                 if self.variables[i] == other_variables[j]:
@@ -33,14 +33,14 @@ class Multipolynomial:
 
         # The polynomials are also equal if they use the same variables
         # in a different order
-        if self.coefficients.dim != other.coefficients.dim:
+        if self.dim != other.dim:
             return False
         variable_mapping = self.__get_re_mapper(other.variables)
-        if len(variable_mapping) < self.coefficients.dim:
+        if len(variable_mapping) < self.dim:
             return False
         for position, value in other.coefficients:
             mapped_position = []
-            for x in range(self.coefficients.dim):
+            for x in range(self.dim):
                 mapped_position.append(position[variable_mapping[x]])
             if value != self.__get(mapped_position):
                 return False
@@ -48,6 +48,9 @@ class Multipolynomial:
 
     def __get(self, position):
         return self.coefficients.get(position)
+
+    def __set(self, position, value):
+        return self.coefficients.set(position, value)
 
     def __has(self, position):
         return self.coefficients.has(position)
@@ -68,7 +71,7 @@ class Multipolynomial:
                 new_term = new_term + '-'
             elif value != 1:
                 new_term = new_term + f'{value}'
-            for i in range(self.coefficients.dim):
+            for i in range(self.dim):
                 new_term = new_term + var_display(
                     self.variables[i], position[i]
                 )
@@ -83,7 +86,7 @@ class Multipolynomial:
 
     def __reduce(self):
         variables_to_remove = []
-        for i in range(self.coefficients.dim):
+        for i in range(self.dim):
             # variable_index counts backwards intentionally
             # We first reduce the most buried lists in the table (representing
             # the last variable) by removing trailing 0's. Then we walk back
@@ -91,7 +94,7 @@ class Multipolynomial:
             # When a variable is removed, only the ones that follow it are
             # shifted, so we capture the variable indexes in reverse order
             # and remove them that way.
-            variable_index = self.coefficients.dim - i - 1
+            variable_index = self.dim - i - 1
             max_len = 0
             for position, value in IterableTable(variable_index,
                                                  self.coefficients.table):
@@ -106,56 +109,53 @@ class Multipolynomial:
             self.coefficients.remove_dim(j)
         return self
 
+    def __extend_with(self, other_variables):
+        extended_self = self.copy()
+        for v in other_variables:
+            if not (v in self.variables):
+                extended_self.variables.append(v)
+                extended_self.coefficients.add_dim()
+        return extended_self
+
+    @property
+    def dim(self):
+        return self.coefficients.dim
+
     def copy(self):
         return Multipolynomial(
             self.variables.copy(), self.coefficients.table.copy()
         )
 
-    def plus(self, summand):
-        if self.variables != summand.variables:
-            if set(self.variables) == set(summand.variables):
-                re_mapper = summand.__get_re_mapper(self.variables)
-                re_mapped_coefficients = IterableTable(
-                    summand.coefficients.dim,
-                    summand.coefficients.table.copy()
-                )
-                re_mapped_coefficients.re_map_indices(re_mapper)
-
-                return self.plus(Multipolynomial(
-                    self.variables,
-                    re_mapped_coefficients.table
-                ))
-
-            extended_self = self.copy()
-            extended_summand = summand.copy()
-            for v in summand.variables:
-                if not (v in extended_self.variables):
-                    extended_self.variables.append(v)
-                    extended_self.coefficients.add_dim()
-            for v in self.variables:
-                if not (v in extended_summand.variables):
-                    extended_summand.variables.append(v)
-                    extended_summand.coefficients.add_dim()
-            return extended_self.plus(extended_summand)
-        coefficients = []
-        position = [0] * len(self.variables)
+    def __do_plus(self, summand):
+        result = Multipolynomial(self.variables.copy(), [])
+        position = [0] * self.dim
         while self.__has(position) or summand.__has(position):
-            current = coefficients
-            for i in range(len(self.variables) - 1):
-                if position[i] >= len(current):
-                    current.insert(position[i], [])
-                current = current[position[i]]
-
             a = self.__get(position)
             b = summand.__get(position)
             if a is None:
-                current.append(b)
+                result.__set(position, b)
             elif b is None:
-                current.append(a)
+                result.__set(position, a)
             else:
-                current.append(a + b)
+                result.__set(position, a + b)
             position = resolve_position(
                 self.__next(position),
                 summand.__next(position)
             )
-        return Multipolynomial(self.variables, coefficients).__reduce()
+        return result.__reduce()
+
+    def plus(self, summand):
+        if self.variables != summand.variables:
+            if set(self.variables) == set(summand.variables):
+                return self.plus(Multipolynomial(
+                    self.variables,
+                    summand.coefficients.re_map_indices(
+                        summand.__get_re_mapper(self.variables)
+                    ).table
+                ))
+
+            return self.__extend_with(summand.variables)\
+                .plus(summand.__extend_with(self.variables))
+
+        return self.__do_plus(summand)
+

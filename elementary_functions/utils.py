@@ -40,7 +40,7 @@ class IterableTable:
             for i in range(self.dim):
                 mapped_position[re_mapper[i]] = position[i]
             new_table.set(mapped_position, value)
-        self.table = new_table.table
+        return new_table
 
     def remove_dim(self, i):
         if i < 0 or self.dim <= i:
