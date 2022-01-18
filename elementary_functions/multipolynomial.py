@@ -1,4 +1,4 @@
-from general.utils import maximum
+from general.utils import maximum, vector_sum
 from .utils import IterableTable, var_display, resolve_position
 
 
@@ -26,7 +26,7 @@ class Multipolynomial:
     def __eq__(self, other):
         if not isinstance(other, Multipolynomial):
             return False
-        # If the parameters are equal, then the instnaces are
+        # If the parameters are equal, then the instances are
         if self.variables == other.variables and \
                 self.coefficients == other.coefficients:
             return True
@@ -159,3 +159,15 @@ class Multipolynomial:
 
         return self.__do_plus(summand)
 
+    def times(self, multiplicand):
+        result = Multipolynomial(self.variables, [])\
+            .__extend_with(multiplicand.variables)
+
+        for pos, val in self.coefficients:
+            for other_pos, other_val in multiplicand.coefficients:
+                result_pos = vector_sum(pos, other_pos)
+                result.__set(
+                    result_pos,
+                    (result.__get(result_pos) or 0) + val * other_val
+                )
+        return result.__reduce()

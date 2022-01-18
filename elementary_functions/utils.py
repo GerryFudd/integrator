@@ -113,6 +113,8 @@ class IterableTable:
 
     def next(self, position):
         if position is None:
+            if self.dim == 0 and len(self.table) == 1:
+                return [0]
             return [0] * self.dim
         i = len(position)
         candidate = position.copy()
