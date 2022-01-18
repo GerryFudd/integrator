@@ -3,6 +3,14 @@ from .utils import IterableTable, var_display, resolve_position
 
 
 class Multipolynomial:
+    @staticmethod
+    def zero():
+        return Multipolynomial([], [])
+
+    @staticmethod
+    def one():
+        return Multipolynomial([], [1])
+
     def __init__(self, variables, coefficients):
         self.variables = variables
         self.coefficients = IterableTable(len(variables), coefficients)
@@ -34,6 +42,8 @@ class Multipolynomial:
         # The polynomials are also equal if they use the same variables
         # in a different order
         if self.dim != other.dim:
+            return False
+        if len(self.coefficients.table) != len(other.coefficients.table):
             return False
         variable_mapping = self.__get_re_mapper(other.variables)
         if len(variable_mapping) < self.dim:
@@ -171,3 +181,18 @@ class Multipolynomial:
                     (result.__get(result_pos) or 0) + val * other_val
                 )
         return result.__reduce()
+
+    def power(self, exponent):
+        if not isinstance(exponent, int) or exponent < 0:
+            raise Exception('Only whole number exponents are supported.')
+        if exponent == 0:
+            return Multipolynomial.one()
+        if exponent == 1:
+            return self.copy()
+
+        copies = 1
+        result = self.copy()
+        while copies < exponent:
+            result = result.times(self)
+            copies = copies + 1
+        return result

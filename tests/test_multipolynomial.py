@@ -175,21 +175,58 @@ class TestMultipolynomialProduct(TestCase):
 
     def test_multipolynomial_product_handles_identity(self):
         first = Multipolynomial(['a', 'b'], [[1, 2, 3], [4, 5], [6]])
-        ident = Multipolynomial([], [1])
-        assert first.times(ident) == first
-        assert ident.times(first) == first
-        assert ident.times(ident) == ident
+        assert first.times(Multipolynomial.one()) == first
+        assert Multipolynomial.one().times(first) == first
+        assert Multipolynomial.one().times(Multipolynomial.one()) == \
+               Multipolynomial.one()
 
     def test_multipolynomial_product_handles_zero(self):
         first = Multipolynomial(['a', 'b'], [[1, 2, 3], [4, 5], [6]])
-        zero = Multipolynomial([], [])
-        assert first.times(zero) == zero
-        assert zero.times(first) == zero
-        assert zero.times(zero) == zero
+        assert first.times(Multipolynomial.zero()) == Multipolynomial.zero()
+        assert Multipolynomial.zero().times(first) == Multipolynomial.zero()
+        assert Multipolynomial.zero().times(Multipolynomial.zero()) == \
+               Multipolynomial.zero()
 
     def test_multipolynomial_product_handles_cancellation(self):
         first = Multipolynomial(['a', 'b'], [[0, 1], [1]])
         second = Multipolynomial(['a', 'b'], [[0, -1], [1]])
         assert first.times(second) == Multipolynomial(
             ['a', 'b'], [[0, 0, -1], [], [1]]
+        )
+
+
+class TestMultipolynomialPower(TestCase):
+    def test_multipolynomial_power(self):
+        assert Multipolynomial(['a', 'b'], [[0, 1], [1]]).power(2) == \
+               Multipolynomial(['a', 'b'], [[0, 0, 1], [0, 2], [1]])
+
+    def test_multipolynomial_power_handles_one(self):
+        assert Multipolynomial(['a', 'b'], [[0, 1], [1]]).power(1) == \
+               Multipolynomial(['a', 'b'], [[0, 1], [1]])
+
+    def test_multipolynomial_power_handles_zero(self):
+        assert Multipolynomial(['a', 'b'], [[0, 1], [1]]).power(0) == \
+               Multipolynomial.one()
+
+    def test_multipolynomial_power_larger(self):
+        assert Multipolynomial(['a', 'b'], [[0, 1], [1]]).power(5) == \
+               Multipolynomial(['a', 'b'], [
+                   [0, 0, 0, 0, 0, 1],
+                   [0, 0, 0, 0, 5],
+                   [0, 0, 0, 10],
+                   [0, 0, 10],
+                   [0, 5]
+                   [1]
+               ])
+
+    def test_multipolynomial_power_more_cross(self):
+        assert Multipolynomial(
+            ['a', 'b', 'c'], [[[1, 3], [5, 7]], [[11, 13], [17, 19]]]
+        ).power(2) \
+               == Multipolynomial(
+            ['a', 'b', 'c'], [
+                [[1, 6, 9], [10, 44, 42], [25, 70, 49]],
+                [[22, 92, 78], [144, 424, 296], [170, 428, 266]],
+                [[121, 286, 169], [374, 860, 494], [289, 646, 361]]
+            ]
         )
