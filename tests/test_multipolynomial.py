@@ -179,3 +179,17 @@ class TestMultipolynomialProduct(TestCase):
         assert first.times(ident) == first
         assert ident.times(first) == first
         assert ident.times(ident) == ident
+
+    def test_multipolynomial_product_handles_zero(self):
+        first = Multipolynomial(['a', 'b'], [[1, 2, 3], [4, 5], [6]])
+        zero = Multipolynomial([], [])
+        assert first.times(zero) == zero
+        assert zero.times(first) == zero
+        assert zero.times(zero) == zero
+
+    def test_multipolynomial_product_handles_cancellation(self):
+        first = Multipolynomial(['a', 'b'], [[0, 1], [1]])
+        second = Multipolynomial(['a', 'b'], [[0, -1], [1]])
+        assert first.times(second) == Multipolynomial(
+            ['a', 'b'], [[0, 0, -1], [], [1]]
+        )

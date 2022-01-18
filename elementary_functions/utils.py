@@ -5,6 +5,9 @@ class TableIterator:
 
     def __next__(self):
         self.position = self.coefficients.next(self.position)
+        if isinstance(self.position, list) and len(self.position) == 0 and \
+                len(self.coefficients.table) == 0:
+            return self.position, 0
         result = self.coefficients.get(self.position)
         if result is None:
             raise StopIteration
@@ -46,7 +49,9 @@ class IterableTable:
         if i < 0 or self.dim <= i:
             raise IndexError(f'The index {i} is not a removable index for a'
                              f'table with dimension {self.dim}')
-        if i == 0:
+        if len(self.table) == 0:
+            pass
+        elif i == 0:
             if len(self.table) > 1:
                 raise Exception(f'The index 0 is not removable because '
                                 f'the table {self.table} is not comprised of '
