@@ -1,6 +1,7 @@
 from abc import abstractmethod
 from numbers import Number
 from typing import Protocol, List
+from types import FunctionType
 from elementary_functions.power_functions import PowerFunction
 
 
@@ -9,6 +10,14 @@ class Function(Protocol):
     def evaluate(self, x: Number) -> Number:
         """A function must be able to take an input and render an output"""
         raise NotImplementedError
+
+
+class WrappedFunction:
+    def __init__(self, f: FunctionType):
+        self.f = f
+
+    def evaluate(self, x: Number) -> Number:
+        return self.f(x)
 
 
 class FunctionSum:

@@ -1,6 +1,14 @@
 from decimal import Decimal
 from enum import Enum
+from numbers import Number
+from typing import Callable, Union
+from types import FunctionType
 
+from elementary_functions.polynomial import Polynomial
+from elementary_functions.power_functions import PowerFunction
+from elementary_functions.simple import CharacteristicFunction, Interval
+from elementary_functions.utils import Function, WrappedFunction, FunctionScaled, \
+    FunctionSum
 from .utils import get_local_extrema, output_range
 
 
@@ -18,16 +26,21 @@ class IntegrationResult:
 
 
 class Integrator:
-    def __init__(self, func, mode=Mode.FLUCTUATING) -> None:
+    def __init__(self, func: Union[Function, Callable[[Number], Number]],
+                 mode=Mode.FLUCTUATING) -> \
+            None:
+        if isinstance(func, FunctionType):
+            self.func = WrappedFunction(func)
+        else:
+            self.func = func
+
         self.cache = {}
-
-        def cached_func(x):
-            if x not in self.cache:
-                self.cache[x] = func(x)
-            return self.cache[x]
-
-        self.cached_func = cached_func
         self.mode = mode
+
+    def cached_func(self, x):
+        if x not in self.cache:
+            self.cache[x] = self.func.evaluate(x)
+        return self.cache[x]
 
     def __reset_cache(self):
         self.cache = {}
@@ -61,6 +74,27 @@ class Integrator:
             max_y = max_y + values[2]
         self.__reset_cache()
         return IntegrationResult(min_y, max_y, trap)
+
+    def integrate_exact(self, a, b):
+        if isinstance(self.func, PowerFunction):
+            new_power = self.func.power + 1
+            anti_derivative = FunctionScaled(
+                1/new_power, PowerFunction(new_power)
+            )
+            return anti_derivative.evaluate(b) - anti_derivative.evaluate(a)
+        if isinstance(self.func, FunctionScaled):
+            return self.func.scale * Integrator(self.func.base_func)\
+                .integrate_exact(a, b)
+        if isinstance(self.func, FunctionSum) \
+                or isinstance(self.func, Polynomial):
+            return sum(map(
+                lambda x: Integrator(x).integrate_exact(a, b),
+                self.func.constituents
+            ))
+        if isinstance(self.func, CharacteristicFunction):
+            return self.func.domain.intersect(Interval(a, b)).measure()
+
+        raise NotImplementedError
 
     def difference_func(self, a, b):
         return lambda x: self.cached_func(x) - (

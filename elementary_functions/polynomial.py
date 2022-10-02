@@ -1,7 +1,8 @@
 from numbers import Number
+from typing import List
 
 from calculus.utils import maximum
-from elementary_functions.utils import FunctionSum, FunctionScaled
+from elementary_functions.utils import FunctionSum, FunctionScaled, Function
 from elementary_functions.power_functions import PowerFunction
 
 
@@ -9,12 +10,12 @@ class Polynomial:
     def __init__(self, *coefficients):
         self.coefficients = list(coefficients)
         terms = []
-        for coefficient, power in enumerate(coefficients):
+        for power, coefficient in enumerate(self.coefficients):
             if not coefficient == 0:
                 terms.append(FunctionScaled(
-                    coefficient,  PowerFunction(power)
+                    coefficient, PowerFunction(power)
                 ))
-        self.__func = FunctionSum(terms)
+        self.func = FunctionSum(*terms)
 
     def __eq__(self, other):
         if not isinstance(other, Polynomial):
@@ -22,7 +23,7 @@ class Polynomial:
         return self.coefficients == other.coefficients
 
     def __str__(self):
-        return str(self.__func)
+        return str(self.func)
 
     def __repr__(self):
         return f'Polynomial(coefficients={self.coefficients})'
@@ -64,5 +65,9 @@ class Polynomial:
                     )
         return Polynomial(*coefficients)
 
+    @property
+    def constituents(self) -> List[Function]:
+        return self.func.constituents
+
     def evaluate(self, x: Number) -> Number:
-        return self.__func.evaluate(x)
+        return self.func.evaluate(x)

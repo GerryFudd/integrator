@@ -2,14 +2,29 @@ from decimal import Decimal
 from unittest import TestCase
 
 from calculus.integrator import Integrator, Mode
+from elementary_functions.polynomial import Polynomial
+from elementary_functions.power_functions import PowerFunction
+from elementary_functions.utils import FunctionScaled
 
 
 class TestIntegrator(TestCase):
     def test_integrate_linear(self):
-        result = Integrator(lambda x: 2 * x).integrate(0, 2, 4)
+        func = FunctionScaled(2, PowerFunction(1))
+        result = Integrator(func).integrate(0, 2, 4)
         assert result.trap == 4
         assert result.min == 3
         assert result.max == 5
+
+    def test_integrate_exact_power_func(self):
+        func = FunctionScaled(6, PowerFunction(2))
+        assert Integrator(func).integrate_exact(-1, 2) == 18
+
+    def test_integrate_exact_polynomial(self):
+        # f(x) = -4  - x + 3x^2
+        # F(x) = -4x - 1/2 x^2 + x^3
+        # -4(2) - 1/2 (2)^2 + (2)^3 + 4(-1) + 1/2(-1)^2 - (-1)^3
+        # -4.5
+        assert Integrator(Polynomial(-4, -1, 3)).integrate_exact(-1, 2) == -4.5
 
     def test_integrate_linear_increasing(self):
         result = Integrator(lambda x: 2 * x, Mode.INCREASING).integrate(0, 2, 4)

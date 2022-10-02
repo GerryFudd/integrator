@@ -17,7 +17,7 @@ def max_num(a: Number, b: Number) -> Number:
 
 
 class Interval:
-    def __int__(self, a: Number, b: Number):
+    def __init__(self, a: Number, b: Number):
         self.a = a
         self.b = b
 
@@ -51,6 +51,9 @@ class IntervalCollection:
     def __iter__(self):
         return self.intervals.__iter__()
 
+    def measure(self) -> Number:
+        return sum(map(lambda x: x.b - x.a, self.intervals))
+
     def add(self, other: Interval) -> None:
         new_interval = other
         to_remove: List[Interval] = []
@@ -65,9 +68,13 @@ class IntervalCollection:
             self.intervals.remove(r)
         self.intervals.append(new_interval)
 
-    def intersect(self, other: IntervalCollection):
+    def intersect(self, other: IntervalCollection | Interval):
+        if isinstance(other, Interval):
+            other_arg = IntervalCollection.from_intervals([other])
+        else:
+            other_arg = other
         new_intervals = IntervalCollection()
-        for other_interval in other:
+        for other_interval in other_arg:
             for this_interval in self.intervals:
                 if this_interval.intersects(other_interval):
                     new_intervals.add(intersect(this_interval, other_interval))
