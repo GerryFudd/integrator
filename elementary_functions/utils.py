@@ -1,3 +1,42 @@
+from abc import abstractmethod
+from numbers import Number
+from typing import Protocol, List
+from elementary_functions.power_functions import PowerFunction
+
+
+class Function(Protocol):
+    @abstractmethod
+    def evaluate(self, x: Number) -> Number:
+        """A function must be able to take an input and render an output"""
+        raise NotImplementedError
+
+
+class FunctionSum:
+    def __init__(self, *constituents):
+        self.constituents: List[Function] = list(constituents)
+
+    def __str__(self):
+        return ' + '.join(map(str, self.constituents))
+
+    def evaluate(self, x: Number) -> Number:
+        return sum(map(lambda f: f.evaluate(x), self.constituents))
+
+
+class FunctionScaled:
+    def __init__(self, scale: Number, base_func: Function):
+        self.scale = scale
+        self.base_func = base_func
+
+    def __str__(self):
+        if isinstance(self.base_func, PowerFunction) \
+                and self.base_func.power == 0:
+            return f'{self.scale}'
+        return f'{self.scale}{self.base_func}'
+
+    def evaluate(self, x: Number) -> Number:
+        return self.scale * self.base_func.evaluate(x)
+
+
 class TableIterator:
     def __init__(self, coefficients):
         self.position = None
@@ -47,7 +86,7 @@ class IterableTable:
 
     def remove_dim(self, i):
         if i < 0 or self.dim <= i:
-            raise IndexError(f'The index {i} is not a removable index for a'
+            raise IndexError(f'The index {i} is not a removable index for a '
                              f'table with dimension {self.dim}')
         if len(self.table) == 0:
             pass
@@ -95,6 +134,12 @@ class IterableTable:
 
     def set(self, position, value):
         if len(position) == 0:
+            if isinstance(value, int):
+                if value == 0:
+                    self.table = []
+                    return
+                self.table = [value]
+                return
             self.table = value
             return
         current = self.table

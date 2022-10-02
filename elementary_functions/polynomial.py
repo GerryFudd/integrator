@@ -1,9 +1,20 @@
+from numbers import Number
+
 from calculus.utils import maximum
+from elementary_functions.utils import FunctionSum, FunctionScaled
+from elementary_functions.power_functions import PowerFunction
 
 
 class Polynomial:
     def __init__(self, *coefficients):
         self.coefficients = list(coefficients)
+        terms = []
+        for coefficient, power in enumerate(coefficients):
+            if not coefficient == 0:
+                terms.append(FunctionScaled(
+                    coefficient,  PowerFunction(power)
+                ))
+        self.__func = FunctionSum(terms)
 
     def __eq__(self, other):
         if not isinstance(other, Polynomial):
@@ -11,20 +22,7 @@ class Polynomial:
         return self.coefficients == other.coefficients
 
     def __str__(self):
-        result = []
-        result.pop()
-        for n in range(len(self.coefficients)):
-            if self.coefficients[n] == 0:
-                pass
-            elif n == 0:
-                result.append(f'{self.coefficients[0]}')
-            elif n == 1:
-                result.append(f'{self.coefficients[1]}x')
-            elif n >= 10:
-                result.append(f'{self.coefficients[n]}x^({n})')
-            else:
-                result.append(f'{self.coefficients[n]}x^{n}')
-        return ' + '.join(result)
+        return str(self.__func)
 
     def __repr__(self):
         return f'Polynomial(coefficients={self.coefficients})'
@@ -65,3 +63,6 @@ class Polynomial:
                         i, self.coefficients[n] * multiplicand.coefficients[m]
                     )
         return Polynomial(*coefficients)
+
+    def evaluate(self, x: Number) -> Number:
+        return self.__func.evaluate(x)

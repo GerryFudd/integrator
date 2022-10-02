@@ -215,9 +215,10 @@ class TestMultipolynomialPower(TestCase):
                    [0, 0, 0, 0, 5],
                    [0, 0, 0, 10],
                    [0, 0, 10],
-                   [0, 5]
+                   [0, 5],
                    [1]
                ])
+
 
     def test_multipolynomial_power_more_cross(self):
         assert Multipolynomial(

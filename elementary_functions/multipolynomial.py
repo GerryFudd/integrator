@@ -52,14 +52,14 @@ class Multipolynomial:
             mapped_position = []
             for x in range(self.dim):
                 mapped_position.append(position[variable_mapping[x]])
-            if value != self.__get(mapped_position):
+            if value != self[mapped_position]:
                 return False
         return True
 
-    def __get(self, position):
+    def __getitem__(self, position):
         return self.coefficients.get(position)
 
-    def __set(self, position, value):
+    def __setitem__(self, position, value):
         return self.coefficients.set(position, value)
 
     def __has(self, position):
@@ -140,14 +140,14 @@ class Multipolynomial:
         result = Multipolynomial(self.variables.copy(), [])
         position = [0] * self.dim
         while self.__has(position) or summand.__has(position):
-            a = self.__get(position)
-            b = summand.__get(position)
+            a = self[position]
+            b = summand[position]
             if a is None:
-                result.__set(position, b)
+                result[position] = b
             elif b is None:
-                result.__set(position, a)
+                result[position] = a
             else:
-                result.__set(position, a + b)
+                result[position] = a + b
             position = resolve_position(
                 self.__next(position),
                 summand.__next(position)
@@ -176,10 +176,7 @@ class Multipolynomial:
         for pos, val in self.coefficients:
             for other_pos, other_val in multiplicand.coefficients:
                 result_pos = vector_sum(pos, other_pos)
-                result.__set(
-                    result_pos,
-                    (result.__get(result_pos) or 0) + val * other_val
-                )
+                result[result_pos] = (result[result_pos] or 0) + val * other_val
         return result.__reduce()
 
     def power(self, exponent):
