@@ -1,13 +1,13 @@
 from abc import abstractmethod
-from numbers import Number
 from typing import Protocol, List
 from types import FunctionType
 from elementary_functions.power_functions import PowerFunction
+from general.utils import Numeric
 
 
 class Function(Protocol):
     @abstractmethod
-    def evaluate(self, x: Number) -> Number:
+    def evaluate(self, x: Numeric) -> Numeric:
         """A function must be able to take an input and render an output"""
         raise NotImplementedError
 
@@ -16,7 +16,7 @@ class WrappedFunction:
     def __init__(self, f: FunctionType):
         self.f = f
 
-    def evaluate(self, x: Number) -> Number:
+    def evaluate(self, x: Numeric) -> Numeric:
         return self.f(x)
 
 
@@ -27,12 +27,12 @@ class FunctionSum:
     def __str__(self):
         return ' + '.join(map(str, self.constituents))
 
-    def evaluate(self, x: Number) -> Number:
+    def evaluate(self, x: Numeric) -> Numeric:
         return sum(map(lambda f: f.evaluate(x), self.constituents))
 
 
 class FunctionScaled:
-    def __init__(self, scale: Number, base_func: Function):
+    def __init__(self, scale: Numeric, base_func: Function):
         self.scale = scale
         self.base_func = base_func
 
@@ -42,7 +42,7 @@ class FunctionScaled:
             return f'{self.scale}'
         return f'{self.scale}{self.base_func}'
 
-    def evaluate(self, x: Number) -> Number:
+    def evaluate(self, x: Numeric) -> Numeric:
         return self.scale * self.base_func.evaluate(x)
 
 

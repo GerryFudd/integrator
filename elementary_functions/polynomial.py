@@ -1,9 +1,9 @@
-from numbers import Number
 from typing import List
 
 from calculus.utils import maximum
 from elementary_functions.utils import FunctionSum, FunctionScaled, Function
 from elementary_functions.power_functions import PowerFunction
+from general.utils import Numeric
 
 
 class Polynomial:
@@ -69,5 +69,5 @@ class Polynomial:
     def constituents(self) -> List[Function]:
         return self.func.constituents
 
-    def evaluate(self, x: Number) -> Number:
+    def evaluate(self, x: Numeric) -> Numeric:
         return self.func.evaluate(x)

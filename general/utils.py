@@ -1,3 +1,22 @@
+from __future__ import annotations
+from abc import abstractmethod
+from typing import Protocol
+
+
+class Numeric(Protocol):
+    @abstractmethod
+    def __add__(self, other):
+        raise NotImplementedError
+
+    @abstractmethod
+    def __mul__(self, other):
+        raise NotImplementedError
+
+    @abstractmethod
+    def __sub__(self, other):
+        raise NotImplementedError
+
+
 def minimum(a, b):
     if a <= b:
         return a
@@ -8,6 +27,7 @@ def maximum(a, b):
     if a >= b:
         return a
     return b
+
 
 def vector_sum(l1, l2):
     result = []

@@ -1,4 +1,4 @@
-from numbers import Number
+from general.utils import Numeric
 
 
 class PowerFunction:
@@ -14,7 +14,7 @@ class PowerFunction:
             return f'x^({self.power})'
         return f'x^{self.power}'
 
-    def evaluate(self, x: Number) -> Number:
+    def evaluate(self, x: Numeric) -> Numeric:
         result = 1
         for factor in [x] * abs(self.power):
             if self.power >= 0:

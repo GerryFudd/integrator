@@ -1,14 +1,15 @@
 from decimal import Decimal
 from enum import Enum
-from numbers import Number
 from typing import Callable, Union
 from types import FunctionType
 
 from elementary_functions.polynomial import Polynomial
 from elementary_functions.power_functions import PowerFunction
-from elementary_functions.simple import CharacteristicFunction, Interval
+from elementary_functions.simple import CharacteristicFunction, Interval, \
+    SimpleFunction
 from elementary_functions.utils import Function, WrappedFunction, FunctionScaled, \
     FunctionSum
+from general.utils import Numeric
 from .utils import get_local_extrema, output_range
 
 
@@ -26,7 +27,7 @@ class IntegrationResult:
 
 
 class Integrator:
-    def __init__(self, func: Union[Function, Callable[[Number], Number]],
+    def __init__(self, func: Union[Function, Callable[[Numeric], Numeric]],
                  mode=Mode.FLUCTUATING) -> \
             None:
         if isinstance(func, FunctionType):
@@ -86,7 +87,8 @@ class Integrator:
             return self.func.scale * Integrator(self.func.base_func)\
                 .integrate_exact(a, b)
         if isinstance(self.func, FunctionSum) \
-                or isinstance(self.func, Polynomial):
+                or isinstance(self.func, Polynomial) \
+                or isinstance(self.func, SimpleFunction):
             return sum(map(
                 lambda x: Integrator(x).integrate_exact(a, b),
                 self.func.constituents

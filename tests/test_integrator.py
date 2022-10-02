@@ -4,6 +4,8 @@ from unittest import TestCase
 from calculus.integrator import Integrator, Mode
 from elementary_functions.polynomial import Polynomial
 from elementary_functions.power_functions import PowerFunction
+from elementary_functions.simple import CharacteristicFunction, \
+    SimpleFunction
 from elementary_functions.utils import FunctionScaled
 
 
@@ -25,6 +27,26 @@ class TestIntegrator(TestCase):
         # -4(2) - 1/2 (2)^2 + (2)^3 + 4(-1) + 1/2(-1)^2 - (-1)^3
         # -4.5
         assert Integrator(Polynomial(-4, -1, 3)).integrate_exact(-1, 2) == -4.5
+
+    def test_integrate_exact_characteristic(self):
+        integrator = Integrator(CharacteristicFunction.from_intervals(
+            (-6, -2),
+            (-1, 1),
+            (2, 7),
+        ))
+        assert integrator.integrate_exact(-3, 4) == 5
+        assert integrator.integrate_exact(-3, 0) == 2
+        assert integrator.integrate_exact(0, 8) == 6
+
+    def test_integrate_exact_simple(self):
+        func = SimpleFunction()\
+            .add(2, (-4, -1))\
+            .add(-1, (1, 3))\
+            .add(3, (4, 7))
+        integrator = Integrator(func)
+        assert integrator.integrate_exact(-3, 4) == 2
+        assert integrator.integrate_exact(-2, 2) == 1
+        assert integrator.integrate_exact(0, 8) == 7
 
     def test_integrate_linear_increasing(self):
         result = Integrator(lambda x: 2 * x, Mode.INCREASING).integrate(0, 2, 4)
