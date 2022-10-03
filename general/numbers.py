@@ -39,6 +39,10 @@ class Numeric(Protocol):
         raise NotImplementedError
 
     @abstractmethod
+    def __rtruediv__(self, other):
+        raise NotImplementedError
+
+    @abstractmethod
     def __eq__(self, other):
         raise NotImplementedError
 
