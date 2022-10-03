@@ -63,6 +63,10 @@ class Numeric(Protocol):
         raise NotImplementedError
 
     @abstractmethod
+    def __neg__(self):
+        raise NotImplementedError
+
+    @abstractmethod
     def __abs__(self):
         raise NotImplementedError
 
