@@ -1,6 +1,28 @@
 from general.numbers import maximum
 from general.utils import vector_sum
-from .utils import IterableTable, var_display, resolve_position
+from general.table import IterableTable
+from elementary_functions.utils import var_display
+
+
+def resolve_position(position_a, position_b):
+    if position_a == position_b:
+        return position_a
+    if position_a is None:
+        return position_b
+    if position_b is None:
+        return position_a
+    if len(position_a) != len(position_b):
+        raise Exception('Can\'t compare positions of differing dimension.')
+
+    for i in range(len(position_a)):
+        # If one position has a smaller index anywhere starting from the
+        # front, then it is earlier
+        if position_a[i] < position_b[i]:
+            return position_a
+        if position_b[i] < position_a[i]:
+            return position_b
+    raise Exception('Positions should be identical, but didn\'t come out '
+                    f'equal\n{position_a}\n{position_b}')
 
 
 class Multipolynomial:
