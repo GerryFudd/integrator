@@ -100,6 +100,9 @@ class CharacteristicFunction:
     def __init__(self, domain: IntervalCollection):
         self.domain = domain
 
+    def __str__(self):
+        return f'X_({self.domain})'
+
     def evaluate(self, x: Numeric) -> Numeric:
         if self.domain.contains(x):
             return 1
@@ -109,6 +112,18 @@ class CharacteristicFunction:
 class SimpleFunction:
     def __init__(self):
         self.linear_combo: Dict[Interval, Numeric] = {}
+
+    @staticmethod
+    def __term_str(term):
+        if term.scale == 1:
+            return str(term.base_func)
+        return f'{term.scale}{term.base_func}'
+
+    def __str__(self):
+        return ' + '.join(map(
+            self.__term_str,
+            filter(lambda x: x.scale != 0, self.constituents)
+        ))
 
     def add(
         self,
@@ -148,4 +163,6 @@ class SimpleFunction:
         return result
 
     def evaluate(self, x: Numeric) -> Numeric:
+        if len(self.linear_combo) == 0:
+            return 0
         return FunctionSum(*self.constituents).evaluate(x)

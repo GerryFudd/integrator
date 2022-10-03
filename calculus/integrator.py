@@ -9,7 +9,7 @@ from elementary_functions.simple import CharacteristicFunction, Interval, \
     SimpleFunction
 from elementary_functions.utils import Function, WrappedFunction, FunctionScaled, \
     FunctionSum
-from general.utils import Numeric
+from general.utils import Numeric, RationalNumber
 from .utils import get_local_extrema, output_range
 
 
@@ -79,8 +79,9 @@ class Integrator:
     def integrate_exact(self, a, b):
         if isinstance(self.func, PowerFunction):
             new_power = self.func.power + 1
-            anti_derivative = FunctionScaled(
-                1/new_power, PowerFunction(new_power)
+            anti_derivative = PowerFunction(
+                new_power,
+                RationalNumber.resolve(self.func.coefficient) / new_power
             )
             return anti_derivative.evaluate(b) - anti_derivative.evaluate(a)
         if isinstance(self.func, FunctionScaled):

@@ -1,7 +1,6 @@
 from abc import abstractmethod
 from typing import Protocol, List
 from types import FunctionType
-from elementary_functions.power_functions import PowerFunction
 from general.utils import Numeric
 
 
@@ -37,10 +36,7 @@ class FunctionScaled:
         self.base_func = base_func
 
     def __str__(self):
-        if isinstance(self.base_func, PowerFunction) \
-                and self.base_func.power == 0:
-            return f'{self.scale}'
-        return f'{self.scale}{self.base_func}'
+        return f'{self.scale}({self.base_func})'
 
     def evaluate(self, x: Numeric) -> Numeric:
         return self.scale * self.base_func.evaluate(x)

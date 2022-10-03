@@ -1,7 +1,7 @@
 from typing import List
 
 from calculus.utils import maximum
-from elementary_functions.utils import FunctionSum, FunctionScaled, Function
+from elementary_functions.utils import FunctionSum, Function
 from elementary_functions.power_functions import PowerFunction
 from general.utils import Numeric
 
@@ -12,9 +12,7 @@ class Polynomial:
         terms = []
         for power, coefficient in enumerate(self.coefficients):
             if not coefficient == 0:
-                terms.append(FunctionScaled(
-                    coefficient, PowerFunction(power)
-                ))
+                terms.append(PowerFunction(power, coefficient))
         self.func = FunctionSum(*terms)
 
     def __eq__(self, other):

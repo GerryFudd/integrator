@@ -6,20 +6,20 @@ from elementary_functions.polynomial import Polynomial
 from elementary_functions.power_functions import PowerFunction
 from elementary_functions.simple import CharacteristicFunction, \
     SimpleFunction
-from elementary_functions.utils import FunctionScaled
 
 
 class TestIntegrator(TestCase):
     def test_integrate_linear(self):
-        func = FunctionScaled(2, PowerFunction(1))
-        result = Integrator(func).integrate(0, 2, 4)
+        result = Integrator(Polynomial(0, 2)).integrate(0, 2, 4)
         assert result.trap == 4
         assert result.min == 3
         assert result.max == 5
 
     def test_integrate_exact_power_func(self):
-        func = FunctionScaled(6, PowerFunction(2))
-        assert Integrator(func).integrate_exact(-1, 2) == 18
+        assert Integrator(PowerFunction(2)).integrate_exact(-1, 2) == 3
+
+    def test_integrate_exact_power_func_non_int(self):
+        assert Integrator(PowerFunction(0.5, 1.5)).integrate_exact(0, 4) == 8
 
     def test_integrate_exact_polynomial(self):
         # f(x) = -4  - x + 3x^2
@@ -39,11 +39,10 @@ class TestIntegrator(TestCase):
         assert integrator.integrate_exact(0, 8) == 6
 
     def test_integrate_exact_simple(self):
-        func = SimpleFunction()\
-            .add(2, (-4, -1))\
-            .add(-1, (1, 3))\
-            .add(3, (4, 7))
-        integrator = Integrator(func)
+        integrator = Integrator(SimpleFunction()
+                                .add(2, (-4, -1))
+                                .add(-1, (1, 3))
+                                .add(3, (4, 7)))
         assert integrator.integrate_exact(-3, 4) == 2
         assert integrator.integrate_exact(-2, 2) == 1
         assert integrator.integrate_exact(0, 8) == 7
@@ -55,7 +54,7 @@ class TestIntegrator(TestCase):
         assert result.max == 5
 
     def test_integrate_linear_decreasing(self):
-        result = Integrator(lambda x: -2 * x, Mode.DECREASING)\
+        result = Integrator(lambda x: -2 * x, Mode.DECREASING) \
             .integrate(0, 2, 4)
         assert result.trap == -4
         assert result.min == -5
@@ -78,7 +77,8 @@ class TestIntegrator(TestCase):
         first_approximation = integrator.integrate(0, 1, 10)
         assert round(first_approximation.trap, 1) == Decimal('3.1')
         assert first_approximation.max > first_approximation.min
-        assert first_approximation.max - first_approximation.min < Decimal('0.5')
+        assert first_approximation.max - first_approximation.min < Decimal(
+            '0.5')
 
         second_approximation = integrator.integrate(0, 1, 100)
         assert round(second_approximation.trap, 2) == Decimal('3.14')
@@ -112,9 +112,9 @@ class TestIntegrator(TestCase):
         # the path that goes from (x, y) to (a, y) and then (a, 0).
         def error_function(a, error):
             return (
-                1 + a * error
-                - (1 + 2 * a * error - error ** 2) ** Decimal('0.5')
-            ) / (a ** 2 + 1)
+                       1 + a * error
+                       - (1 + 2 * a * error - error ** 2) ** Decimal('0.5')
+                   ) / (a ** 2 + 1)
 
         def get_elliptic_integrator(a):
             return Integrator(
@@ -124,8 +124,8 @@ class TestIntegrator(TestCase):
 
         elliptic_integrator_doubled = get_elliptic_integrator(2)
         assert elliptic_integrator_doubled.integral_to_precision(
-                0, 1, precision=1, resolution=2,
-                error_func_upper=lambda e: error_function(2, e)
-            )[0] == Decimal('4.8')
+            0, 1, precision=1, resolution=2,
+            error_func_upper=lambda e: error_function(2, e)
+        )[0] == Decimal('4.8')
         # The true value of 2 * 2 * EllipticE(1 - 1 / 2^2) is
         # 4.8442241102738380992142515981959147059769591989433004125415581762
