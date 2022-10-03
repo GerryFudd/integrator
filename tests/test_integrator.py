@@ -1,7 +1,7 @@
 from decimal import Decimal
 from unittest import TestCase
 
-from calculus.integrator import Integrator, Mode
+from calculus.integrator import Integrator, Mode, integrate_exact
 from elementary_functions.polynomial import Polynomial
 from elementary_functions.power import PowerFunction
 from elementary_functions.simple import CharacteristicFunction, \
@@ -16,35 +16,35 @@ class TestIntegrator(TestCase):
         assert result.max == 5
 
     def test_integrate_exact_power_func(self):
-        assert Integrator(PowerFunction(2)).integrate_exact(-1, 2) == 3
+        assert integrate_exact(PowerFunction(2), -1, 2) == 3
 
     def test_integrate_exact_power_func_non_int(self):
-        assert Integrator(PowerFunction(0.5, 1.5)).integrate_exact(0, 4) == 8
+        assert integrate_exact(PowerFunction(0.5, 1.5), 0, 4) == 8
 
     def test_integrate_exact_polynomial(self):
         # f(x) = -4  - x + 3x^2
         # F(x) = -4x - 1/2 x^2 + x^3
         # -4(2) - 1/2 (2)^2 + (2)^3 + 4(-1) + 1/2(-1)^2 - (-1)^3
         # -4.5
-        assert Integrator(Polynomial(-4, -1, 3)).integrate_exact(-1, 2) == -4.5
+        assert integrate_exact(Polynomial(-4, -1, 3), -1, 2) == -4.5
 
     def test_integrate_exact_characteristic(self):
-        integrator = Integrator(CharacteristicFunction(Interval(-6, -2))
-                                + CharacteristicFunction(Interval(-1, 1))
-                                + CharacteristicFunction(Interval(2, 7)))
-        assert integrator.integrate_exact(-3, 4) == 5
-        assert integrator.integrate_exact(-3, 0) == 2
-        assert integrator.integrate_exact(0, 8) == 6
+        func = CharacteristicFunction(Interval(-6, -2))\
+                                + CharacteristicFunction(Interval(-1, 1))\
+                                + CharacteristicFunction(Interval(2, 7))
+        assert integrate_exact(func, -3, 4) == 5
+        assert integrate_exact(func, -3, 0) == 2
+        assert integrate_exact(func, 0, 8) == 6
 
     def test_integrate_exact_simple(self):
-        integrator = Integrator(SimpleFunction(
+        func = SimpleFunction(
             CharacteristicFunction(Interval(-4, -1), 2),
             CharacteristicFunction(Interval(1, 3), -1),
             CharacteristicFunction(Interval(4, 7), 3),
-        ))
-        assert integrator.integrate_exact(-3, 4) == 2
-        assert integrator.integrate_exact(-2, 2) == 1
-        assert integrator.integrate_exact(0, 8) == 7
+        )
+        assert integrate_exact(func, -3, 4) == 2
+        assert integrate_exact(func, -2, 2) == 1
+        assert integrate_exact(func, 0, 8) == 7
 
     def test_integrate_linear_increasing(self):
         result = Integrator(lambda x: 2 * x, Mode.INCREASING).integrate(0, 2, 4)

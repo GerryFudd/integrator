@@ -1,5 +1,5 @@
 from elementary_functions.utils import FunctionSum
-from general.utils import Numeric, RationalNumber
+from general.numbers import Numeric, RationalNumber
 
 
 class PowerFunction:

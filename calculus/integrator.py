@@ -9,7 +9,7 @@ from elementary_functions.simple import CharacteristicFunction, Interval, \
     SimpleFunction
 from elementary_functions.utils import Function, WrappedFunction, \
     FunctionSum
-from general.utils import Numeric, RationalNumber
+from general.numbers import Numeric, RationalNumber
 from .utils import get_local_extrema, output_range
 
 
@@ -75,30 +75,6 @@ class Integrator:
             max_y = max_y + values[2]
         self.__reset_cache()
         return IntegrationResult(min_y, max_y, trap)
-
-    def integrate_exact(self, a, b):
-        if isinstance(self.func, PowerFunction):
-            new_power = self.func.power + 1
-            anti_derivative = PowerFunction(
-                new_power,
-                RationalNumber.resolve(self.func.coefficient) / new_power
-            )
-            return anti_derivative.evaluate(b) - anti_derivative.evaluate(a)
-        if isinstance(self.func, FunctionSum) \
-                or isinstance(self.func, Polynomial) \
-                or isinstance(self.func, SimpleFunction):
-            return sum(map(
-                lambda x: Integrator(x).integrate_exact(a, b),
-                self.func.constituents
-            ))
-        if isinstance(self.func, CharacteristicFunction):
-            if not self.func.domain.intersects(Interval(a, b)):
-                return 0
-            return self.func.coefficient * (
-                self.func.domain * Interval(a, b)
-            ).measure()
-
-        raise NotImplementedError
 
     def difference_func(self, a, b):
         return lambda x: self.cached_func(x) - (
@@ -172,3 +148,28 @@ class Integrator:
             ) / 2
         self.__reset_cache()
         return round(integral, precision), total_error
+
+
+def integrate_exact(func, a, b):
+    if isinstance(func, PowerFunction):
+        new_power = func.power + 1
+        anti_derivative = PowerFunction(
+            new_power,
+            RationalNumber.resolve(func.coefficient) / new_power
+        )
+        return anti_derivative.evaluate(b) - anti_derivative.evaluate(a)
+    if isinstance(func, FunctionSum) \
+        or isinstance(func, Polynomial) \
+        or isinstance(func, SimpleFunction):
+        return sum(map(
+            lambda x: integrate_exact(x, a, b),
+            func.constituents
+        ))
+    if isinstance(func, CharacteristicFunction):
+        if not func.domain.intersects(Interval(a, b)):
+            return 0
+        return func.coefficient * (
+            func.domain * Interval(a, b)
+        ).measure()
+
+    raise NotImplementedError

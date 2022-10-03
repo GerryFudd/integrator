@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from typing import Protocol, List, Callable
-from general.utils import Numeric
+from general.numbers import Numeric
 
 
 class Function(Protocol):

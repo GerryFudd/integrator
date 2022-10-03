@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import List
 
 from elementary_functions.utils import FunctionSum
-from general.utils import maximum, minimum, Numeric
+from general.numbers import maximum, minimum, Numeric
 
 
 class Interval:

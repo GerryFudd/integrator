@@ -1,4 +1,5 @@
-from general.utils import maximum, vector_sum
+from general.numbers import maximum
+from general.utils import vector_sum
 from .utils import IterableTable, var_display, resolve_position
 
 

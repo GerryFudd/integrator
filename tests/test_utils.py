@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 from calculus.utils import get_local_extrema
-from general.utils import RationalNumber, Numeric
+from general.numbers import RationalNumber, Numeric
 
 
 def test_get_local_extrema_for_line():
