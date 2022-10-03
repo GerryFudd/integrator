@@ -51,13 +51,3 @@ class FunctionSum:
         if isinstance(other, FunctionSum):
             return FunctionSum(*(self.constituents + other.constituents))
         return FunctionSum(*(self.constituents + [other]))
-
-
-def var_display(variable, power):
-    if power == 0:
-        return ''
-    if power == 1:
-        return variable
-    if power >= 10:
-        return f'{variable}^({power})'
-    return f'{variable}^{power}'

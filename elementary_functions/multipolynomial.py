@@ -1,7 +1,6 @@
 from general.numbers import maximum
 from general.utils import vector_sum
 from general.table import IterableTable
-from elementary_functions.utils import var_display
 
 
 def resolve_position(position_a, position_b):
@@ -23,6 +22,16 @@ def resolve_position(position_a, position_b):
             return position_b
     raise Exception('Positions should be identical, but didn\'t come out '
                     f'equal\n{position_a}\n{position_b}')
+
+
+def var_display(variable, power):
+    if power == 0:
+        return ''
+    if power == 1:
+        return variable
+    if power >= 10:
+        return f'{variable}^({power})'
+    return f'{variable}^{power}'
 
 
 class Multipolynomial:
