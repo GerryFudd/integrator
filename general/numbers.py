@@ -188,7 +188,7 @@ class RationalNumber:
         return -self + other
 
     def __truediv__(self, other):
-        return ((self ** -1) * other) ** -1
+        return self * (self.resolve(other) ** -1)
 
     def __rtruediv__(self, other):
         return (self ** -1) * other

@@ -23,3 +23,6 @@ class Vector:
 
     def __rmul__(self, other):
         return Vector(*map(lambda x: other * x, self.coefficients))
+
+    def __neg__(self):
+        return -1 * self

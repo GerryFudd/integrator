@@ -1,14 +1,14 @@
 from abc import abstractmethod
-from typing import Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable, List, Union
 
-from general.numbers import Numeric
+from general.numbers import Numeric, RationalNumber
 from general.vector import Vector
 
 
 @runtime_checkable
 class Equation(Protocol):
     @abstractmethod
-    def solve(self) -> Numeric:
+    def solve(self) -> Union[Numeric, List[Numeric]]:
         raise NotImplementedError
 
 
@@ -53,6 +53,9 @@ class PolynomialExpression:
             return (1/other) * self
         raise NotImplementedError
 
+    def __neg__(self):
+        return PolynomialExpression(*(-self.coefficients))
+
 
 class LinearEquation:
     def __init__(self, left: PolynomialExpression, right: PolynomialExpression):
@@ -76,3 +79,25 @@ class LinearEquation:
                 self.right /= divisor
                 continue
         return self.right[0]
+
+
+class QuadraticEquation:
+    def __init__(self, left: PolynomialExpression, right: PolynomialExpression):
+        if len(left) != 3 or len(right) != 3:
+            raise NotImplementedError
+        self.left = left
+        self.right = right
+
+    def solve(self) -> List[Numeric]:
+        if self.right != PolynomialExpression(0, 0, 0):
+            summand = -self.right
+            self.left += summand
+            self.right += summand
+        if self.left[1] == self.left[2] == 0:
+            raise NotImplementedError
+        if self.left[2] == 0:
+            return [-self.left[0] / self.left[1]]
+
+        u = RationalNumber.resolve(self.left[1])/(2 * self.left[2])
+        v = (u ** 2 - self.left[0]) ** 0.5
+        return [-u + v, -u - v]
