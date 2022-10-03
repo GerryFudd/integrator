@@ -4,7 +4,7 @@ from typing import Callable, Union
 from types import FunctionType
 
 from elementary_functions.polynomial import Polynomial
-from elementary_functions.power_functions import PowerFunction
+from elementary_functions.power import PowerFunction
 from elementary_functions.simple import CharacteristicFunction, Interval, \
     SimpleFunction
 from elementary_functions.utils import Function, WrappedFunction, \

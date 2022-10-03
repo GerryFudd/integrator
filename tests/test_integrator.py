@@ -3,7 +3,7 @@ from unittest import TestCase
 
 from calculus.integrator import Integrator, Mode
 from elementary_functions.polynomial import Polynomial
-from elementary_functions.power_functions import PowerFunction
+from elementary_functions.power import PowerFunction
 from elementary_functions.simple import CharacteristicFunction, \
     SimpleFunction, Interval
 

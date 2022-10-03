@@ -2,7 +2,7 @@ from typing import List
 
 from calculus.utils import maximum
 from elementary_functions.utils import FunctionSum, Function
-from elementary_functions.power_functions import PowerFunction
+from elementary_functions.power import PowerFunction
 from general.utils import Numeric
 
 
