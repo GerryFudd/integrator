@@ -3,84 +3,11 @@ from __future__ import annotations
 from typing import List
 
 from elementary_functions.utils import FunctionSum
-from general.numbers import maximum, minimum, Numeric
+from general.interval import Interval
+from general.numbers import Numeric
 
 
-class Interval:
-    def __init__(self, a: Numeric, b: Numeric):
-        if b < a:
-            raise NotImplementedError
-        self.a = a
-        self.b = b
 
-    def __str__(self):
-        return f'({self.a},{self.b})'
-
-    def __lt__(self, other):
-        if not isinstance(other, Interval):
-            raise NotImplementedError
-        return self.a < other.a or (self.a == other.a and self.b < other.b)
-
-    def __le__(self, other):
-        if not isinstance(other, Interval):
-            raise NotImplementedError
-        return self < other or self == other
-
-    def __gt__(self, other):
-        if not isinstance(other, Interval):
-            raise NotImplementedError
-        return other < self
-
-    def __ge__(self, other):
-        if not isinstance(other, Interval):
-            raise NotImplementedError
-        return other < self or self == other
-
-    def __eq__(self, other):
-        if not isinstance(other, Interval):
-            return False
-        return self.a == other.a and self.b == other.b
-
-    def __ne__(self, other):
-        return not (self == other)
-
-    def measure(self):
-        return self.b - self.a
-
-    def intersects(self, interval: Interval) -> bool:
-        return self.a < interval.b and interval.a < self.b
-
-    def contains(self, x: Numeric) -> bool:
-        return self.a < x < self.b
-
-    def __add__(self, other):
-        if not isinstance(other, Interval) or not self.intersects(other):
-            raise NotImplementedError
-        return Interval(
-            minimum(self.a, other.a),
-            maximum(self.b, other.b),
-        )
-
-    def __sub__(self, other):
-        if not isinstance(other, Interval):
-            raise NotImplementedError
-
-        if not self.intersects(other):
-            return [Interval(self.a, self.b)]
-        result = []
-        if self.a < other.a:
-            result.append(Interval(self.a, other.a))
-        if other.b < self.b:
-            result.append(Interval(other.b, self.b))
-        return result
-
-    def __mul__(self, other):
-        if not isinstance(other, Interval) or not self.intersects(other):
-            raise NotImplementedError
-        return Interval(
-            maximum(self.a, other.a),
-            minimum(self.b, other.b),
-        )
 
 
 class CharacteristicFunction:

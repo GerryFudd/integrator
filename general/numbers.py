@@ -1,6 +1,7 @@
 from __future__ import annotations
 from abc import abstractmethod
 from decimal import Decimal
+from math import inf, isinf
 from typing import runtime_checkable, Protocol
 
 
@@ -118,6 +119,8 @@ class RationalNumber:
 
     @staticmethod
     def resolve(x) -> RationalNumber:
+        if isinstance(x, str):
+            return RationalNumber.from_dec_str(x)
         if isinstance(x, RationalNumber):
             return x
         if isinstance(x, int):
@@ -206,9 +209,13 @@ class RationalNumber:
         return not (self == other)
 
     def __lt__(self, other):
+        if not isinstance(other, RationalNumber) and isinf(other):
+            return 0 < other
         return (self - other).numerator < 0
 
     def __le__(self, other):
+        if not isinstance(other, RationalNumber) and isinf(other):
+            return 0 < other
         return (self - other).numerator <= 0
 
     def __gt__(self, other):
@@ -224,3 +231,12 @@ class RationalNumber:
         if self.numerator >= 0:
             return RationalNumber(self.numerator, self.denominator, False)
         return -self
+
+
+def resolve(string: str):
+    if string == '-inf':
+        return -inf
+    if string == 'inf':
+        return inf
+    else:
+        return RationalNumber.resolve(string)
