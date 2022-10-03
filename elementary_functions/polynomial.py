@@ -9,11 +9,11 @@ from general.utils import Numeric
 class Polynomial:
     def __init__(self, *coefficients):
         self.coefficients = list(coefficients)
-        terms = []
+        func = FunctionSum()
         for power, coefficient in enumerate(self.coefficients):
             if not coefficient == 0:
-                terms.append(PowerFunction(power, coefficient))
-        self.func = FunctionSum(*terms)
+                func += PowerFunction(power, coefficient)
+        self.func = func
 
     def __eq__(self, other):
         if not isinstance(other, Polynomial):
@@ -31,35 +31,42 @@ class Polynomial:
             self.coefficients.pop()
         return self
 
-    def plus(self, summand):
-        coefficients = []
-        for n in range(maximum(
-            len(self.coefficients), len(summand.coefficients)
-        )):
-            if n >= len(self.coefficients):
-                coefficients.append(summand.coefficients[n])
-            elif n >= len(summand.coefficients):
-                coefficients.append(self.coefficients[n])
-            else:
-                coefficients.append(
-                    self.coefficients[n] + summand.coefficients[n]
-                )
-        return Polynomial(*coefficients).__reduce()
+    def __rmul__(self, other):
+        return Polynomial(*map(lambda x: other * x, self.coefficients))
 
-    def times(self, multiplicand):
+    def __add__(self, other):
+        if isinstance(other, Polynomial):
+            coefficients = []
+            for n in range(maximum(
+                len(self.coefficients), len(other.coefficients)
+            )):
+                if n >= len(self.coefficients):
+                    coefficients.append(other.coefficients[n])
+                elif n >= len(other.coefficients):
+                    coefficients.append(self.coefficients[n])
+                else:
+                    coefficients.append(
+                        self.coefficients[n] + other.coefficients[n]
+                    )
+            return Polynomial(*coefficients).__reduce()
+        return FunctionSum(self, other)
+
+    def __mul__(self, other):
+        if not isinstance(other, Polynomial):
+            raise NotImplementedError
         self.__reduce()
-        multiplicand.__reduce()
+        other.__reduce()
         coefficients = []
         for n in range(len(self.coefficients)):
-            for m in range(len(multiplicand.coefficients)):
+            for m in range(len(other.coefficients)):
                 i = n + m
                 if i < len(coefficients):
                     coefficients[i] = coefficients[i] \
                                       + self.coefficients[n] \
-                                      * multiplicand.coefficients[m]
+                                      * other.coefficients[m]
                 else:
                     coefficients.insert(
-                        i, self.coefficients[n] * multiplicand.coefficients[m]
+                        i, self.coefficients[n] * other.coefficients[m]
                     )
         return Polynomial(*coefficients)
 

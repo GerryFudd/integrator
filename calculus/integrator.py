@@ -7,7 +7,7 @@ from elementary_functions.polynomial import Polynomial
 from elementary_functions.power_functions import PowerFunction
 from elementary_functions.simple import CharacteristicFunction, Interval, \
     SimpleFunction
-from elementary_functions.utils import Function, WrappedFunction, FunctionScaled, \
+from elementary_functions.utils import Function, WrappedFunction, \
     FunctionSum
 from general.utils import Numeric, RationalNumber
 from .utils import get_local_extrema, output_range
@@ -84,9 +84,6 @@ class Integrator:
                 RationalNumber.resolve(self.func.coefficient) / new_power
             )
             return anti_derivative.evaluate(b) - anti_derivative.evaluate(a)
-        if isinstance(self.func, FunctionScaled):
-            return self.func.scale * Integrator(self.func.base_func)\
-                .integrate_exact(a, b)
         if isinstance(self.func, FunctionSum) \
                 or isinstance(self.func, Polynomial) \
                 or isinstance(self.func, SimpleFunction):
@@ -95,7 +92,11 @@ class Integrator:
                 self.func.constituents
             ))
         if isinstance(self.func, CharacteristicFunction):
-            return self.func.domain.intersect(Interval(a, b)).measure()
+            if not self.func.domain.intersects(Interval(a, b)):
+                return 0
+            return self.func.coefficient * (
+                self.func.domain * Interval(a, b)
+            ).measure()
 
         raise NotImplementedError
 

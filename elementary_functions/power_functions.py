@@ -1,3 +1,4 @@
+from elementary_functions.utils import FunctionSum
 from general.utils import Numeric, RationalNumber
 
 
@@ -17,3 +18,14 @@ class PowerFunction:
 
     def evaluate(self, x: Numeric) -> Numeric:
         return (RationalNumber.resolve(x) ** self.power) * self.coefficient
+
+    def __rmul__(self, other):
+        return PowerFunction(self.power, self.coefficient * other)
+
+    def __add__(self, other):
+        if isinstance(other, PowerFunction) and self.power == other.power:
+            return PowerFunction(
+                self.power,
+                self.coefficient + other.coefficient
+            )
+        return FunctionSum(self, other)

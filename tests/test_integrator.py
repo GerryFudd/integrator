@@ -5,7 +5,7 @@ from calculus.integrator import Integrator, Mode
 from elementary_functions.polynomial import Polynomial
 from elementary_functions.power_functions import PowerFunction
 from elementary_functions.simple import CharacteristicFunction, \
-    SimpleFunction
+    SimpleFunction, Interval
 
 
 class TestIntegrator(TestCase):
@@ -29,20 +29,19 @@ class TestIntegrator(TestCase):
         assert Integrator(Polynomial(-4, -1, 3)).integrate_exact(-1, 2) == -4.5
 
     def test_integrate_exact_characteristic(self):
-        integrator = Integrator(CharacteristicFunction.from_intervals(
-            (-6, -2),
-            (-1, 1),
-            (2, 7),
-        ))
+        integrator = Integrator(CharacteristicFunction(Interval(-6, -2))
+                                + CharacteristicFunction(Interval(-1, 1))
+                                + CharacteristicFunction(Interval(2, 7)))
         assert integrator.integrate_exact(-3, 4) == 5
         assert integrator.integrate_exact(-3, 0) == 2
         assert integrator.integrate_exact(0, 8) == 6
 
     def test_integrate_exact_simple(self):
-        integrator = Integrator(SimpleFunction()
-                                .add(2, (-4, -1))
-                                .add(-1, (1, 3))
-                                .add(3, (4, 7)))
+        integrator = Integrator(SimpleFunction(
+            CharacteristicFunction(Interval(-4, -1), 2),
+            CharacteristicFunction(Interval(1, 3), -1),
+            CharacteristicFunction(Interval(4, 7), 3),
+        ))
         assert integrator.integrate_exact(-3, 4) == 2
         assert integrator.integrate_exact(-2, 2) == 1
         assert integrator.integrate_exact(0, 8) == 7
