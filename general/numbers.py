@@ -209,6 +209,11 @@ class RationalNumber:
         return self.numerator == comparator.numerator \
                and self.denominator == comparator.denominator
 
+    def __hash__(self):
+        if self.denominator == 1:
+            return hash(self.numerator)
+        return hash(self.numerator / self.denominator)
+
     def __ne__(self, other):
         return not (self == other)
 

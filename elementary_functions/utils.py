@@ -41,6 +41,18 @@ class FunctionSum:
     def __str__(self):
         return ' + '.join(map(str, self.constituents))
 
+    def __repr__(self):
+        return f'FunctionSum({",".join(map(str, self.constituents))})'
+
+    def __eq__(self, other):
+        if hasattr(other, 'constituents'):
+            return set(self.constituents) == set(other.constituents)
+        if len(self.constituents) == 0:
+            return ConstantFunction() == other
+        if len(self.constituents) > 1:
+            return False
+        return self.constituents[0] == other
+
     def evaluate(self, x: Numeric) -> Numeric:
         return sum(map(lambda f: f.evaluate(x), self.constituents))
 
@@ -51,3 +63,28 @@ class FunctionSum:
         if isinstance(other, FunctionSum):
             return FunctionSum(*(self.constituents + other.constituents))
         return FunctionSum(*(self.constituents + [other]))
+
+
+class ConstantFunction:
+    def __init__(self, val: Numeric = 0):
+        self.val = val
+
+    def __str__(self):
+        return str(self.val)
+
+    def __repr__(self):
+        return f'ConstantFunction({self.val})'
+
+    def __eq__(self, other):
+        return isinstance(other, ConstantFunction) and self.val == other.val
+
+    def evaluate(self) -> Numeric:
+        return self.val
+
+    def __rmul__(self, other):
+        return ConstantFunction(other * self.val)
+
+    def __add__(self, other):
+        if self.val == 0:
+            return other
+        return FunctionSum(self, other)

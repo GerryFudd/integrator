@@ -1,13 +1,11 @@
 from __future__ import annotations
 
+from math import inf
 from typing import List
 
-from elementary_functions.utils import FunctionSum
+from elementary_functions.utils import FunctionSum, ConstantFunction
 from general.interval import Interval
 from general.numbers import Numeric
-
-
-
 
 
 class CharacteristicFunction:
@@ -17,6 +15,20 @@ class CharacteristicFunction:
 
     def __str__(self):
         return f'{self.coefficient}X_{self.domain}'
+
+    def __repr__(self):
+        return f'CharacteristicFunction(domain={self.domain},coefficient=' \
+               f'{self.coefficient})'
+
+    def __eq__(self, other):
+        if isinstance(other, ConstantFunction) \
+                and self.domain == Interval(-inf, inf):
+            return self.coefficient == other.val
+        return isinstance(other, CharacteristicFunction) \
+            and self.domain == other.domain
+
+    def __hash__(self):
+        return hash((self.domain, self.coefficient, 'CharacteristicFunction'))
 
     def evaluate(self, x: Numeric) -> Numeric:
         if self.domain.contains(x):
@@ -54,6 +66,15 @@ class SimpleFunction:
             str,
             filter(lambda x: x.coefficient != 0, self.constituents)
         ))
+
+    def __repr__(self):
+        return f'SimpleFunction({",".join(map(str, self.constituents))})'
+
+    def __eq__(self, other):
+        if isinstance(other, CharacteristicFunction):
+            return len(self.constituents) == 1 and self.constituents[0] == other
+        return isinstance(other, SimpleFunction) \
+            and set(self.constituents) == set(other.constituents)
 
     def __rmul__(self, other):
         return SimpleFunction(*map(lambda x: other * x, self.constituents))

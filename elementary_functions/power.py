@@ -7,6 +7,18 @@ class PowerFunction:
         self.power = power
         self.coefficient = coefficient
 
+    def __repr__(self):
+        return f'PowerFunction(power={self.power},coefficient=' \
+               f'{self.coefficient})'
+
+    def __eq__(self, other):
+        return isinstance(other, PowerFunction) \
+           and self.power == other.power \
+           and self.coefficient == other.coefficient
+
+    def __hash__(self):
+        return hash((self.coefficient, self.power, 'PowerFunction'))
+
     def __str__(self):
         if self.power == 0:
             return str(self.coefficient)

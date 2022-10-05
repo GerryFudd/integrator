@@ -16,6 +16,8 @@ class Polynomial:
         self.func = func
 
     def __eq__(self, other):
+        if isinstance(other, FunctionSum):
+            return other == self
         if not isinstance(other, Polynomial):
             return False
         return self.coefficients == other.coefficients

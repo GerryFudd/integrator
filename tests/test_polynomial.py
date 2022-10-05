@@ -1,6 +1,7 @@
 from unittest import TestCase
 
 from elementary_functions.polynomial import Polynomial
+from elementary_functions.power import PowerFunction
 
 
 class TestPolynomial(TestCase):
@@ -8,6 +9,10 @@ class TestPolynomial(TestCase):
         first = Polynomial(2, 1, 4)
         second = Polynomial(1, 5, 7)
         assert first + second == Polynomial(3, 6, 11)
+
+    def test_polynomial_equals_sum(self):
+        assert Polynomial(2, 1, 4) == PowerFunction(0, 2) + PowerFunction(1) \
+            + PowerFunction(2, 4)
 
     def test_polynomial_addition_summand_smaller(self):
         first = Polynomial(2, 1, 4, 3, 12)

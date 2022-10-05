@@ -85,6 +85,9 @@ class Interval:
             and self.include_left == other.include_left \
             and self.include_right == other.include_right
 
+    def __hash__(self):
+        return hash((self.a, self.b, self.include_left, self.include_right))
+
     def __ne__(self, other):
         return not (self == other)
 
