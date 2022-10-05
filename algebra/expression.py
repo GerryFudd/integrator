@@ -5,6 +5,7 @@ from general.vector import Vector
 
 
 ExpressionType = TypeVar('ExpressionType')
+SolutionType = TypeVar('SolutionType')
 
 
 class PolynomialExpression:
@@ -26,7 +27,7 @@ class PolynomialExpression:
         ))
 
     def __repr__(self):
-        return f'PolynomialExpression({", ".join(self.coefficients)})'
+        return f'PolynomialExpression({", ".join(map(str, self.coefficients))})'
 
     def __getitem__(self, item):
         return self.coefficients[item]

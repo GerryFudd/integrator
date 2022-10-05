@@ -1,8 +1,9 @@
 from math import inf
 
-from algebra.equation import LinearEquation, PolynomialExpression, \
-    QuadraticEquation
-from algebra.inequality import LinearInequality, Condition, QuadraticInequality
+from algebra.solvable import Condition
+from algebra.linear import LinearEquation, LinearInequality
+from algebra.quadratic import QuadraticEquation, QuadraticInequality
+from algebra.expression import PolynomialExpression
 from general.interval import Interval
 
 
@@ -102,15 +103,15 @@ def test_solve_quadratic_inequality_simple_ge():
 
 def test_solve_quadratic():
     assert QuadraticEquation(
-        PolynomialExpression(-7, 12, 2),
+        PolynomialExpression(-14, 12, 2),
         PolynomialExpression(0, 0, 0)
     ).solve() == [-7, 1]
 
 
 def test_solve_quadratic_with_cancellation():
     assert QuadraticEquation(
-        PolynomialExpression(-5, 4, 15),
-        PolynomialExpression(2, -8, 13)
+        PolynomialExpression(-10, 4, 15),
+        PolynomialExpression(4, -8, 13)
     ).solve() == [-7, 1]
 
 
@@ -126,7 +127,7 @@ def test_solve_quadratic_inequality_reduces_linear_lt():
         PolynomialExpression(-5, 4, 15),
         PolynomialExpression(2, -10, 15),
         Condition.lt()
-    ).solve() == [Interval(0.5, inf)]
+    ).solve() == [Interval(-inf, 0.5)]
 
 
 def test_solve_quadratic_inequality_reduces_linear_le():
@@ -134,7 +135,7 @@ def test_solve_quadratic_inequality_reduces_linear_le():
         PolynomialExpression(-5, 4, 15),
         PolynomialExpression(2, -10, 15),
         Condition.le()
-    ).solve() == [Interval(0.5, inf, True)]
+    ).solve() == [Interval(-inf, 0.5, include_right=True)]
 
 
 def test_solve_quadratic_inequality_reduces_linear_gt():
@@ -142,7 +143,7 @@ def test_solve_quadratic_inequality_reduces_linear_gt():
         PolynomialExpression(-5, 4, 15),
         PolynomialExpression(2, -10, 15),
         Condition.gt()
-    ).solve() == [Interval(-inf, 0.5)]
+    ).solve() == [Interval(0.5, inf)]
 
 
 def test_solve_quadratic_inequality_reduces_linear_ge():
@@ -150,4 +151,4 @@ def test_solve_quadratic_inequality_reduces_linear_ge():
         PolynomialExpression(-5, 4, 15),
         PolynomialExpression(2, -10, 15),
         Condition.ge()
-    ).solve() == [Interval(-inf, 0.5, include_right=True)]
+    ).solve() == [Interval(0.5, inf, True)]
