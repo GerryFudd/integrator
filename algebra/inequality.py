@@ -3,9 +3,10 @@ from abc import ABC, abstractmethod
 from math import inf
 from typing import Generic, List
 
+from algebra.equation import QuadraticEquation
 from algebra.expression import ExpressionType, PolynomialExpression
 from elementary_functions.simple import Interval
-from general.numbers import Numeric
+from general.numbers import Numeric, minimum, maximum
 
 
 class Condition:
@@ -76,8 +77,7 @@ class LinearInequality(Inequality[PolynomialExpression]):
         self.condition = condition
 
     def solve(self) -> List[Interval]:
-        if self.left[0] != 0 or self.right[1] != 0:
-            self.add(PolynomialExpression(-self.left[0], -self.right[1]))
+        self.add(PolynomialExpression(-self.left[0], -self.right[1]))
         if self.left[1] == 0:
             raise NotImplementedError
         if self.left[1] != 1:
@@ -92,3 +92,46 @@ class LinearInequality(Inequality[PolynomialExpression]):
             self.right[0], inf,
             include_left=self.condition.equal
         )]
+
+
+class QuadraticInequality(Inequality[PolynomialExpression]):
+    def __init__(
+        self, left: PolynomialExpression, right: PolynomialExpression,
+        condition: Condition
+    ):
+        if len(left) != 3 or len(right) != 3:
+            raise NotImplementedError
+        self.left = left
+        self.right = right
+        self.condition = condition
+
+    def solve(self) -> List[Interval]:
+        boundaries = QuadraticEquation(self.left, self.right).solve()
+        if len(boundaries) == 1:
+            if (
+                self.left[1] > self.right[1] and self.condition.less_than
+            ) or (
+                self.left[1] < self.right[1] and not self.condition.less_than
+            ):
+                return [Interval(boundaries[0], inf, self.condition.equal)]
+            return [Interval(
+                -inf, boundaries[0], include_right=self.condition.equal
+            )]
+        if (
+            self.left[2] > self.right[2] and self.condition.less_than
+        ) or (
+            self.left[2] < self.right[2] and not self.condition.less_than
+        ):
+            return [Interval(
+                *boundaries,
+                self.condition.equal,
+                self.condition.equal,
+            )]
+        return [
+            Interval(
+                -inf, minimum(*boundaries), include_right=self.condition.equal,
+            ),
+            Interval(
+                maximum(*boundaries), inf, self.condition.equal,
+            )
+        ]

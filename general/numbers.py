@@ -93,6 +93,8 @@ def gcd(a: int, b: int):
 class RationalNumber:
     @staticmethod
     def from_float(f: float):
+        if isinf(f):
+            raise NotImplementedError
         if f < 0:
             return -RationalNumber.from_float(abs(f))
         numerator = int(f // 1)
@@ -201,6 +203,8 @@ class RationalNumber:
                f'{self.denominator})'
 
     def __eq__(self, other):
+        if isinstance(other, float) and isinf(other):
+            return False
         comparator = self.resolve(other)
         return self.numerator == comparator.numerator \
                and self.denominator == comparator.denominator
@@ -209,12 +213,12 @@ class RationalNumber:
         return not (self == other)
 
     def __lt__(self, other):
-        if not isinstance(other, RationalNumber) and isinf(other):
+        if isinstance(other, float) and isinf(other):
             return 0 < other
         return (self - other).numerator < 0
 
     def __le__(self, other):
-        if not isinstance(other, RationalNumber) and isinf(other):
+        if isinstance(other, float) and isinf(other):
             return 0 < other
         return (self - other).numerator <= 0
 
