@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from general.numbers import RationalNumber, Numeric
+from general.numbers import RationalNumber, Numeric, newton_int_sqrt
 
 
 def test_rational_number_from_int():
@@ -100,3 +100,48 @@ def test_from_dec():
 def test_abs():
     assert abs(RationalNumber(4, 13, False)) == RationalNumber(4, 13, False)
     assert abs(RationalNumber(-4, 13, False)) == RationalNumber(4, 13, False)
+
+
+def test_int_sqrt_perfect_squares():
+    assert newton_int_sqrt(0) == 0
+    assert newton_int_sqrt(1) == 1
+    assert newton_int_sqrt(4) == 2
+    assert newton_int_sqrt(9) == 3
+    assert newton_int_sqrt(16) == 4
+
+
+def test_int_sqrt_closest_int():
+    assert newton_int_sqrt(2) == 1
+    assert newton_int_sqrt(3) in (1, 2)
+    assert newton_int_sqrt(5) in (2, 3)
+    assert newton_int_sqrt(6) in (2, 3)
+    assert newton_int_sqrt(7) in (2, 3)
+    assert newton_int_sqrt(8) in (2, 3)
+    assert newton_int_sqrt(10) in (3, 4)
+    assert newton_int_sqrt(11) in (3, 4)
+    assert newton_int_sqrt(12) in (3, 4)
+    assert newton_int_sqrt(13) in (3, 4)
+    assert newton_int_sqrt(14) in (3, 4)
+    assert newton_int_sqrt(15) in (3, 4)
+    assert newton_int_sqrt(17) in (4, 5)
+    assert newton_int_sqrt(18) in (4, 5)
+    assert newton_int_sqrt(19) in (4, 5)
+    assert newton_int_sqrt(20) in (4, 5)
+    assert newton_int_sqrt(21) in (4, 5)
+    assert newton_int_sqrt(22) in (4, 5)
+    assert newton_int_sqrt(23) in (4, 5)
+    assert newton_int_sqrt(24) in (4, 5)
+
+
+def test_newton_sqrt_exact():
+    assert RationalNumber(0, 1) ** 0.5 == 0
+    assert RationalNumber(1, 1) ** 0.5 == 1
+    assert RationalNumber(1, 4) ** 0.5 == 0.5
+    assert RationalNumber(4, 9) ** 0.5 == RationalNumber(2, 3)
+    assert RationalNumber(9, 4) ** 0.5 == 1.5
+    assert RationalNumber(9, 16) ** 0.5 == 0.75
+    assert RationalNumber(25, 16) ** 0.5 == 1.25
+
+
+def test_sqrt_approx():
+    assert RationalNumber(2, 1) ** 0.5 == Decimal(2) ** Decimal('0.5')

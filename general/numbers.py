@@ -32,6 +32,14 @@ class Numeric(Protocol):
         raise NotImplementedError
 
     @abstractmethod
+    def __rmul__(self, other):
+        raise NotImplementedError
+
+    @abstractmethod
+    def __pow__(self, power, modulo=None):
+        raise NotImplementedError
+
+    @abstractmethod
     def __sub__(self, other):
         raise NotImplementedError
 
@@ -90,6 +98,20 @@ def gcd(a: int, b: int):
     return gcd(m, n % m)
 
 
+def newton_int_sqrt(x: int):
+    if x == 0:
+        return 0
+    if x < 0:
+        raise NotImplementedError
+    candidate = x
+
+    while True:
+        next_candidate = (candidate + x // candidate) // 2
+        if abs(candidate - next_candidate) <= 1:
+            return next_candidate
+        candidate = next_candidate
+
+
 class RationalNumber:
     @staticmethod
     def from_float(f: float):
@@ -143,8 +165,8 @@ class RationalNumber:
             c = gcd(numerator, denominator)
             if denominator < 0:
                 c = -c
-        self.numerator = int(numerator / c)
-        self.denominator = int(denominator / c)
+        self.numerator = numerator // c
+        self.denominator = denominator // c
 
     def __str__(self):
         if self.denominator == 1:
@@ -180,10 +202,11 @@ class RationalNumber:
             return RationalNumber(
                 self.numerator ** exponent.numerator,
                 self.denominator ** exponent.numerator,
-                False,
-                )
+            )
+        if exponent.denominator == 2 and not modulo:
+            return newton_sqrt(self ** exponent.numerator)
         return RationalNumber.from_dec(pow(
-            Decimal(str(self)), Decimal(str(power)), modulo
+            self.to_decimal(), exponent.to_decimal(), modulo
         ))
 
     def __sub__(self, other):
@@ -203,11 +226,13 @@ class RationalNumber:
                f'{self.denominator})'
 
     def __eq__(self, other):
-        if isinstance(other, float) and isinf(other):
-            return False
-        comparator = self.resolve(other)
-        return self.numerator == comparator.numerator \
-               and self.denominator == comparator.denominator
+        if isinstance(other, RationalNumber):
+            return self.numerator * other.denominator == \
+                   self.denominator * other.numerator
+        return self.numerator == self.denominator * other
+
+    def __req__(self, other):
+        return self == other
 
     def __hash__(self):
         if self.denominator == 1:
@@ -218,14 +243,10 @@ class RationalNumber:
         return not (self == other)
 
     def __lt__(self, other):
-        if isinstance(other, float) and isinf(other):
-            return 0 < other
-        return (self - other).numerator < 0
+        return self.numerator < self.denominator * other
 
     def __le__(self, other):
-        if isinstance(other, float) and isinf(other):
-            return 0 < other
-        return (self - other).numerator <= 0
+        return self.numerator <= self.denominator * other
 
     def __gt__(self, other):
         return not (self <= other)
@@ -240,6 +261,38 @@ class RationalNumber:
         if self.numerator >= 0:
             return RationalNumber(self.numerator, self.denominator, False)
         return -self
+
+    def __round__(self, n=None):
+        return RationalNumber(
+            self.numerator * 10 ** n // self.denominator,
+            10 ** n
+        )
+
+    def to_decimal(self):
+        return Decimal(self.numerator) / self.denominator
+
+
+tol_inv = 1000000000000
+
+
+def newton_sqrt(x: RationalNumber):
+    if x.numerator == 0:
+        return 0
+    if x < 0:
+        raise NotImplementedError
+    candidate = RationalNumber(
+        newton_int_sqrt(x.numerator),
+        newton_int_sqrt(x.denominator)
+    )
+
+    while True:
+        next_candidate = (candidate + x / candidate) / 2
+        n = candidate.numerator * next_candidate.denominator * tol_inv
+        d = candidate.denominator * next_candidate.denominator
+        c = next_candidate.numerator * candidate.denominator * tol_inv
+        if n - d <= c <= n + d:
+            return next_candidate
+        candidate = next_candidate
 
 
 def resolve(string: str):

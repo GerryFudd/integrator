@@ -2,6 +2,7 @@ from unittest import TestCase
 
 from elementary_functions.polynomial import Polynomial
 from elementary_functions.power import PowerFunction
+from elementary_functions.utils import ConstantFunction
 
 
 class TestPolynomial(TestCase):
@@ -13,6 +14,14 @@ class TestPolynomial(TestCase):
     def test_polynomial_equals_sum(self):
         assert Polynomial(2, 1, 4) == PowerFunction(0, 2) + PowerFunction(1) \
             + PowerFunction(2, 4)
+
+    def test_polynomial_equals_constant(self):
+        assert Polynomial(2) == ConstantFunction(2)
+        assert ConstantFunction(2) == Polynomial(2)
+
+    def test_polynomial_not_equal_to_constant(self):
+        assert Polynomial(0, 2) != ConstantFunction(2)
+        assert ConstantFunction(2) != Polynomial(0, 2)
 
     def test_polynomial_addition_summand_smaller(self):
         first = Polynomial(2, 1, 4, 3, 12)

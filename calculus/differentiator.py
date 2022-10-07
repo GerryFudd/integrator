@@ -1,8 +1,7 @@
 from elementary_functions.polynomial import Polynomial
 from elementary_functions.power import PowerFunction
-from elementary_functions.simple import CharacteristicFunction
-from elementary_functions.utils import Function, FunctionSum, WrappedFunction, \
-    ConstantFunction
+from elementary_functions.simple import CharacteristicFunction, SimpleFunction
+from elementary_functions.utils import Function, FunctionSum, ConstantFunction
 
 
 def differentiate(func: Function):
@@ -14,10 +13,13 @@ def differentiate(func: Function):
             ConstantFunction(),
         )
     if isinstance(func, Polynomial):
-        return Polynomial(*map(
-            lambda i, c: i * c,
-            enumerate(func.coefficients)[1:]
-        ))
-    if isinstance(func, CharacteristicFunction):
-        return WrappedFunction(lambda x: 0)
+        new_coefficients = []
+        for i, c in enumerate(func.coefficients):
+            if i == 0:
+                continue
+            new_coefficients.append(i * c)
+        return Polynomial(*new_coefficients)
+    if isinstance(func, CharacteristicFunction) \
+            or isinstance(func, SimpleFunction):
+        return ConstantFunction()
     raise NotImplementedError

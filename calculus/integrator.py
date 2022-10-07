@@ -1,14 +1,12 @@
 from decimal import Decimal
 from enum import Enum
-from typing import Callable, Union
-from types import FunctionType
+from typing import Callable
 
 from elementary_functions.polynomial import Polynomial
 from elementary_functions.power import PowerFunction
 from elementary_functions.simple import CharacteristicFunction, Interval, \
     SimpleFunction
-from elementary_functions.utils import Function, WrappedFunction, \
-    FunctionSum
+from elementary_functions.utils import FunctionSum
 from general.numbers import Numeric, RationalNumber
 from .utils import get_local_extrema, output_range
 
@@ -27,20 +25,16 @@ class IntegrationResult:
 
 
 class Integrator:
-    def __init__(self, func: Union[Function, Callable[[Numeric], Numeric]],
+    def __init__(self, func: Callable[[Numeric], Numeric],
                  mode=Mode.FLUCTUATING) -> \
             None:
-        if isinstance(func, FunctionType):
-            self.func = WrappedFunction(func)
-        else:
-            self.func = func
-
+        self.func = func
         self.cache = {}
         self.mode = mode
 
     def cached_func(self, x):
         if x not in self.cache:
-            self.cache[x] = self.func.evaluate(x)
+            self.cache[x] = self.func(x)
         return self.cache[x]
 
     def __reset_cache(self):
@@ -103,7 +97,7 @@ class Integrator:
         allowed_error = tolerance / 10
         initial_candidate = [
             a + error_func_lower(allowed_error),
-            b - error_func_upper(allowed_error)
+            b - error_func_upper(allowed_error),
         ]
         candidates = [initial_candidate]
         errors = [self.__get_max_error_for_interval(

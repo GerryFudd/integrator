@@ -1,13 +1,14 @@
 from typing import List
 
 from calculus.utils import maximum
-from elementary_functions.utils import FunctionSum, Function
+from elementary_functions.utils import FunctionSum, Function, ConstantFunction, \
+    CompositeFunction
 from elementary_functions.power import PowerFunction
 from general.numbers import Numeric
 
 
 class Polynomial:
-    def __init__(self, *coefficients):
+    def __init__(self, *coefficients: Numeric):
         self.coefficients = list(coefficients)
         func = FunctionSum()
         for power, coefficient in enumerate(self.coefficients):
@@ -16,11 +17,23 @@ class Polynomial:
         self.func = func
 
     def __eq__(self, other):
+        if isinstance(other, ConstantFunction):
+            return self.coefficients == [other.val]
+        if isinstance(other, PowerFunction):
+            return other.power == len(self.coefficients) - 1 \
+                   and isinstance(other.power, int) \
+                   and self.coefficients[:-1] == [0] * other.power \
+                   and self.coefficients[other.power] == other.coefficient
         if isinstance(other, FunctionSum):
             return other == self
         if not isinstance(other, Polynomial):
             return False
         return self.coefficients == other.coefficients
+
+    def __req__(self, other):
+        if isinstance(other, PowerFunction):
+            return self == other
+        raise NotImplementedError
 
     def __str__(self):
         return str(self.func)
@@ -71,6 +84,16 @@ class Polynomial:
                         i, self.coefficients[n] * other.coefficients[m]
                     )
         return Polynomial(*coefficients)
+
+    def __matmul__(self, other):
+        if isinstance(other, Polynomial) or isinstance(other, PowerFunction):
+            term = Polynomial(1)
+            result = ConstantFunction()
+            for coefficient in self.coefficients:
+                result += coefficient * term
+                term *= other
+            return result
+        return CompositeFunction(self, other)
 
     @property
     def constituents(self) -> List[Function]:

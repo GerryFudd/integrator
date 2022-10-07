@@ -35,6 +35,9 @@ class CharacteristicFunction:
             return self.coefficient
         return 0
 
+    def __mul__(self, other):
+        raise NotImplementedError
+
     def __rmul__(self, other):
         return CharacteristicFunction(self.domain, other * self.coefficient)
 
@@ -56,6 +59,9 @@ class CharacteristicFunction:
             return other + self
         return FunctionSum(self, other)
 
+    def __matmul__(self, other):
+        raise NotImplementedError
+
 
 class SimpleFunction:
     def __init__(self, *linear_combo: CharacteristicFunction):
@@ -75,6 +81,9 @@ class SimpleFunction:
             return len(self.constituents) == 1 and self.constituents[0] == other
         return isinstance(other, SimpleFunction) \
             and set(self.constituents) == set(other.constituents)
+
+    def __mul__(self, other):
+        raise NotImplementedError
 
     def __rmul__(self, other):
         return SimpleFunction(*map(lambda x: other * x, self.constituents))
@@ -108,6 +117,9 @@ class SimpleFunction:
                 new_domain, other.coefficient
             ))
             return SimpleFunction(*new_linear_combo)
+        raise NotImplementedError
+
+    def __matmul__(self, other):
         raise NotImplementedError
 
     def evaluate(self, x: Numeric) -> Numeric:
