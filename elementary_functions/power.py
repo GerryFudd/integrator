@@ -1,6 +1,6 @@
 from elementary_functions.utils import FunctionSum, ConstantFunction, \
     CompositeFunction
-from general.numbers import Numeric, RationalNumber
+from general.numbers import Numeric, Number
 
 
 class PowerFunction:
@@ -38,7 +38,7 @@ class PowerFunction:
         return f'{self.coefficient}x^({self.power})'
 
     def evaluate(self, x: Numeric) -> Numeric:
-        return (RationalNumber.resolve(x) ** self.power) * self.coefficient
+        return (Number.of(x) ** self.power) * self.coefficient
 
     def __mul__(self, other):
         if isinstance(other, PowerFunction):

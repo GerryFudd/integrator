@@ -7,7 +7,7 @@ from elementary_functions.power import PowerFunction
 from elementary_functions.simple import CharacteristicFunction, Interval, \
     SimpleFunction
 from elementary_functions.utils import FunctionSum
-from general.numbers import Numeric, RationalNumber
+from general.numbers import Numeric, Number, RationalNumber
 from .utils import get_local_extrema, output_range
 
 
@@ -25,9 +25,9 @@ class IntegrationResult:
 
 
 class Integrator:
-    def __init__(self, func: Callable[[Numeric], Numeric],
-                 mode=Mode.FLUCTUATING) -> \
-            None:
+    def __init__(
+        self, func: Callable[[Numeric], Numeric], mode=Mode.FLUCTUATING
+    ) -> None:
         self.func = func
         self.cache = {}
         self.mode = mode
@@ -93,11 +93,11 @@ class Integrator:
                             ' of 1 will never identify any error in the results'
                             ' because this will only evaluate the function at'
                             ' its endpoints.')
-        tolerance = Decimal('0.1') ** (precision + 1) / 2
+        tolerance = Number(r=RationalNumber(1, 10 ** (precision + 1) * 2))
         allowed_error = tolerance / 10
         initial_candidate = [
-            a + error_func_lower(allowed_error),
-            b - error_func_upper(allowed_error),
+            Number.of(a) + error_func_lower(allowed_error),
+            Number.of(b) - error_func_upper(allowed_error),
         ]
         candidates = [initial_candidate]
         errors = [self.__get_max_error_for_interval(
@@ -149,7 +149,7 @@ def integrate_exact(func, a, b):
         new_power = func.power + 1
         anti_derivative = PowerFunction(
             new_power,
-            RationalNumber.resolve(func.coefficient) / new_power
+            Number.of(func.coefficient) / new_power
         )
         return anti_derivative.evaluate(b) - anti_derivative.evaluate(a)
     if isinstance(func, FunctionSum) \

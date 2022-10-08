@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from general.numbers import maximum, minimum, Numeric, resolve
+from general.numbers import maximum, minimum, Numeric, Number
 
 
 class Interval:
@@ -18,8 +18,8 @@ class Interval:
         if len(parts) != 2:
             raise NotImplementedError
         return Interval(
-            resolve(parts[0].strip()),
-            resolve(parts[1].strip()),
+            Number.parse(parts[0].strip()),
+            Number.parse(parts[1].strip()),
             include_left, include_right
         )
 

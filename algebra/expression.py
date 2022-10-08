@@ -1,6 +1,6 @@
 from typing import TypeVar
 
-from general.numbers import Numeric
+from general.numbers import Numeric, Number
 from general.vector import Vector
 
 
@@ -63,7 +63,7 @@ class PolynomialExpression:
 
     def __truediv__(self, other):
         if isinstance(other, Numeric):
-            return (1/other) * self
+            return (1/Number.of(other)) * self
         raise NotImplementedError
 
     def __neg__(self):

@@ -1,10 +1,10 @@
 from __future__ import annotations
-from general.numbers import Numeric, maximum
+from general.numbers import Numeric, maximum, Number
 
 
 class Vector:
     def __init__(self, *coefficients: Numeric):
-        self.coefficients = list(coefficients)
+        self.coefficients = list(map(Number.of, coefficients))
 
     def __str__(self):
         return f'<{",".join(map(str, self.coefficients))}>'

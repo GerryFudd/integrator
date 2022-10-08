@@ -6,7 +6,7 @@ from algebra.expression import PolynomialExpression, SolutionType
 from algebra.solvable import Solvable, boundaries_linear, Condition, \
     solve_linear_inequality
 from general.interval import Interval
-from general.numbers import Numeric, RationalNumber, minimum, maximum
+from general.numbers import Numeric, minimum, maximum, Number
 
 
 class QuadraticSolvable(Solvable[PolynomialExpression, SolutionType]):
@@ -20,7 +20,7 @@ class QuadraticSolvable(Solvable[PolynomialExpression, SolutionType]):
         self.add(-self.right)
         self.scale(1 / self.left[2])
 
-        u = RationalNumber.resolve(self.left[1]) / 2
+        u = Number.of(self.left[1]) / 2
         v = (u ** 2 - self.left[0]) ** 0.5
         return [-u - v, -u + v]
 
