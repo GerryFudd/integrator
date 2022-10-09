@@ -3,6 +3,7 @@ from __future__ import annotations
 from math import inf
 from typing import List
 
+from custom_numbers.computation import NumberType
 from elementary_functions.utils import FunctionSum, ConstantFunction
 from general.interval import Interval
 from custom_numbers.types import Numeric
@@ -30,10 +31,10 @@ class CharacteristicFunction:
     def __hash__(self):
         return hash((self.domain, self.coefficient, 'CharacteristicFunction'))
 
-    def evaluate(self, x: Numeric) -> Numeric:
+    def evaluate(self, x: NumberType) -> NumberType:
         if self.domain.contains(x):
-            return self.coefficient
-        return 0
+            return (x/x) * self.coefficient
+        return x - x
 
     def __mul__(self, other):
         raise NotImplementedError
@@ -122,7 +123,7 @@ class SimpleFunction:
     def __matmul__(self, other):
         raise NotImplementedError
 
-    def evaluate(self, x: Numeric) -> Numeric:
+    def evaluate(self, x: NumberType) -> NumberType:
         if len(self.constituents) == 0:
-            return 0
+            return x - x
         return FunctionSum(*self.constituents).evaluate(x)

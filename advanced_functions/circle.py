@@ -1,3 +1,4 @@
+from custom_numbers.computation import NumberType
 from elementary_functions.polynomial import Polynomial
 from elementary_functions.power import PowerFunction
 from elementary_functions.utils import ConstantFunction
@@ -16,5 +17,5 @@ class Circle:
     def __repr__(self):
         return f'Circle(a={self.a}, b={self.b}, r={self.r})'
 
-    def evaluate(self, x: Numeric) -> Numeric:
+    def evaluate(self, x: NumberType) -> NumberType:
         return (self.r ** 2 - (x - self.a) ** 2) ** 0.5 + self.b

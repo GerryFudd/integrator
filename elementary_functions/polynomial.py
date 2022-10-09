@@ -1,5 +1,6 @@
 from typing import List
 
+from custom_numbers.computation import NumberType
 from custom_numbers.utils import maximum
 from elementary_functions.utils import FunctionSum, Function, ConstantFunction, \
     CompositeFunction
@@ -99,5 +100,5 @@ class Polynomial:
     def constituents(self) -> List[Function]:
         return self.func.constituents
 
-    def evaluate(self, x: Numeric) -> Numeric:
+    def evaluate(self, x: NumberType) -> NumberType:
         return self.func.evaluate(x)

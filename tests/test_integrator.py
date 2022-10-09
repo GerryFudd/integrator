@@ -8,12 +8,14 @@ from elementary_functions.polynomial import Polynomial
 from elementary_functions.power import PowerFunction
 from elementary_functions.simple import CharacteristicFunction, \
     SimpleFunction, Interval
-from custom_numbers.computation import RationalNumber, Number
+from custom_numbers.computation import Number
 
 
 class TestIntegrator(TestCase):
     def test_integrate_linear(self):
-        result = Integrator(Polynomial(0, 2).evaluate).integrate(0, 2, 4)
+        result = Integrator(
+            Number.of(0), Polynomial(0, 2).evaluate
+        ).integrate(0, 2, 4)
         assert result.trap == 4
         assert result.min == 3
         assert result.max == 5
@@ -27,8 +29,7 @@ class TestIntegrator(TestCase):
     def test_integrate_exact_polynomial(self):
         # f(x) = -4  - x + 3x^2
         # F(x) = -4x - 1/2 x^2 + x^3
-        # -4(2) - 1/2 (2)^2 + (2)^3 + 4(-1) + 1/2(-1)^2 - (-1)^3
-        # -4.5
+        # F(2) - F(-1) = -4.5
         assert integrate_exact(Polynomial(-4, -1, 3), -1, 2) == -4.5
 
     def test_integrate_exact_characteristic(self):
@@ -50,21 +51,28 @@ class TestIntegrator(TestCase):
         assert integrate_exact(func, 0, 8) == 7
 
     def test_integrate_linear_increasing(self):
-        result = Integrator(Polynomial(0, 2).evaluate, Mode.INCREASING)\
-            .integrate(0, 2, 4)
+        result = Integrator(
+            Number.of(0),
+            Polynomial(0, 2).evaluate, Mode.INCREASING
+        ).integrate(0, 2, 4)
         assert result.trap == 4
         assert result.min == 3
         assert result.max == 5
 
     def test_integrate_linear_decreasing(self):
-        result = Integrator(Polynomial(0, -2).evaluate, Mode.DECREASING) \
-            .integrate(0, 2, 4)
+        result = Integrator(
+            Number.of(0),
+            Polynomial(0, -2).evaluate, Mode.DECREASING
+        ).integrate(0, 2, 4)
         assert result.trap == -4
         assert result.min == -5
         assert result.max == -3
 
     def test_integrate_parabola(self):
-        integrator = Integrator(lambda x: 3 * x ** 2)
+        integrator = Integrator(
+            Number.of(0),
+            lambda x: 3 * x ** 2,
+        )
         basic_result = integrator.integrate(-1, 1, 4)
         assert basic_result.trap == Decimal('2.25')
         assert basic_result.min == Decimal('0.75')
@@ -75,26 +83,26 @@ class TestIntegrator(TestCase):
         assert messy_result.min == Decimal('0.96')
 
     def test_calculate_circle_area(self):
-        circle = Circle(0, 0, 1)
-        integrator = Integrator(
-            lambda x: 4 * circle.evaluate(Number.of(x)),
-            Mode.DECREASING
-        )
-        first_approximation = integrator.integrate(0, 1, 10)
+        circle = Circle(0, 0, 2)
+        integrator = Integrator(Number.of(0), circle.evaluate, Mode.DECREASING)
+        first_approximation = integrator.integrate(0, 2, 10)
         assert round(first_approximation.trap, 1) == Decimal('3.1')
         assert first_approximation.max > first_approximation.min
         assert first_approximation.max - first_approximation.min \
-               < RationalNumber(1, 2)
+               < Decimal('0.5')
 
-        second_approximation = integrator.integrate(0, 1, 100)
+        second_approximation = integrator.integrate(0, 2, 100)
         assert round(second_approximation.trap, 2) == Decimal('3.14')
         assert second_approximation.max > second_approximation.min
         assert second_approximation.max - second_approximation.min \
                < Decimal('0.05')
 
     def test_calculate_circle_area_to_precision_one(self):
-        integrator = Integrator(lambda x: 4 * (1 - x ** 2) ** Decimal('0.5'),
-                                Mode.DECREASING)
+        integrator = Integrator(
+            Number.of(0),
+            lambda x: 4 * (1 - x ** 2) ** Decimal('0.5'),
+            Mode.DECREASING
+        )
         assert integrator.integral_to_precision(0, 1, 1, 2)[0] \
                == Decimal('3.1')
 
@@ -102,6 +110,7 @@ class TestIntegrator(TestCase):
         elliptic_function = EllipticFunction(2)
 
         elliptic_integrator_doubled = Integrator(
+            Number.of(0),
             elliptic_function.evaluate,
             Mode.DECREASING
         )

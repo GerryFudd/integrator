@@ -1,7 +1,7 @@
-from decimal import Decimal
 from enum import Enum
 from typing import Callable
 
+from custom_numbers.computation import NumberType
 from custom_numbers.exact import ExactNumber
 from custom_numbers.utils import minimum, maximum
 from elementary_functions.polynomial import Polynomial
@@ -9,8 +9,6 @@ from elementary_functions.power import PowerFunction
 from elementary_functions.simple import CharacteristicFunction, Interval, \
     SimpleFunction
 from elementary_functions.utils import FunctionSum
-from custom_numbers.computation import Number, RationalNumber
-from custom_numbers.types import Numeric
 
 
 class Mode(Enum):
@@ -28,8 +26,12 @@ class IntegrationResult:
 
 class Integrator:
     def __init__(
-        self, func: Callable[[Numeric], Numeric], mode=Mode.FLUCTUATING
+        self,
+        zero_val: NumberType,
+        func: Callable[[NumberType], NumberType],
+        mode=Mode.FLUCTUATING
     ) -> None:
+        self.zero_val = zero_val
         self.func = func
         self.cache = {}
         self.mode = mode
@@ -60,12 +62,15 @@ class Integrator:
 
     def integrate(self, a, b, n):
         self.__reset_cache()
-        min_y = Decimal('0')
-        max_y = Decimal('0')
-        trap = Decimal('0')
-        d = (Decimal(str(b)) - Decimal(str(a))) / Decimal(str(n))
+        min_y = self.zero_val
+        max_y = self.zero_val
+        trap = self.zero_val
+        d = (self.zero_val + b - a) / n
         for p in range(0, n):
-            values = self.__get_range_values(a + p * d, a + (p + 1) * d)
+            values = self.__get_range_values(
+                a + p * d,
+                a + (p + 1) * d
+            )
             trap = trap + values[0]
             min_y = min_y + values[1]
             max_y = max_y + values[2]
@@ -95,11 +100,11 @@ class Integrator:
                             ' of 1 will never identify any error in the results'
                             ' because this will only evaluate the function at'
                             ' its endpoints.')
-        tolerance = Number.of(RationalNumber(1, 10 ** (precision + 1) * 2))
+        tolerance = (self.zero_val + 10) ** (-precision - 1) / 2
         allowed_error = tolerance / 10
         initial_candidate = [
-            Number.of(a) + error_func_lower(allowed_error),
-            Number.of(b) - error_func_upper(allowed_error),
+            self.zero_val + a + error_func_lower(allowed_error),
+            self.zero_val + b - error_func_upper(allowed_error),
         ]
         candidates = [initial_candidate]
         errors = [self.__get_max_error_for_interval(
@@ -117,7 +122,7 @@ class Integrator:
             new_errors = []
             for n in range(len(candidates)):
                 if (candidates[n][1] - candidates[n][0]) * tolerance \
-                    > (b - a) * errors[n]:
+                        > (b - a) * errors[n]:
                     sample.append(candidates[n])
                     total_error = total_error + errors[n]
                 else:
@@ -175,15 +180,9 @@ def integrate_exact(func, a, b):
 
 
 def output_range(func, lower, upper, resolution=100):
-    # Convert lower and upper bounds to decimals to make arithmetic more
-    # predictable (eg dividing values into intervals can be precise with
-    # decimals when it isn't necessarily with binary representations)
-    lower_in = Number.of(lower)
-    upper_in = Number.of(upper)
-
     # Capture the outputs at the lower and upper endpoints
-    lower_val = func(lower_in)
-    upper_val = func(upper_in)
+    lower_val = func(lower)
+    upper_val = func(upper)
 
     # These are the minimum and maximum outputs on this interval.
     # They are initialized as the minimum and maximum from the ends of the
@@ -196,7 +195,7 @@ def output_range(func, lower, upper, resolution=100):
         # from lower_decimal to upper_decimal. The actual lower_decimal
         # and upper_decimal values are not re-sampled because they were already
         # captured.
-        x = lower_in + (upper_in - lower_in) * n / resolution
+        x = lower + (upper - lower) * n / resolution
         val = func(x)
         abs_minimum = minimum(abs_minimum, val)
         abs_maximum = maximum(abs_maximum, val)
@@ -205,14 +204,11 @@ def output_range(func, lower, upper, resolution=100):
 
 def get_local_extrema(func, a, b, resolution=100):
     last_direction = 0
-    a_in = Number.of(a)
-    b_in = Number.of(b)
-    last_x = a_in
+    last_x = a
     last_val = func(last_x)
     local_extrema = []
     for n in range(1, resolution + 1):
-        x = a_in \
-            + (b_in - a_in) * n / resolution
+        x = a + (b - a) * n / resolution
         val = func(x)
         direction = val - last_val
 

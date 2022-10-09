@@ -4,7 +4,7 @@ from elementary_functions.power import PowerFunction
 from elementary_functions.simple import CharacteristicFunction, SimpleFunction
 from elementary_functions.utils import ConstantFunction
 from general.interval import Interval
-from custom_numbers.computation import RationalNumber
+from custom_numbers.exact import RationalNumber
 
 
 def test_differentiate_power():

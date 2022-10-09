@@ -1,7 +1,6 @@
 from decimal import Decimal
 
-from custom_numbers.exact import RadicalTerm
-from custom_numbers.computation import RationalNumber
+from custom_numbers.exact import RadicalTerm, RationalNumber
 from custom_numbers.utils import newton_int_sqrt
 from custom_numbers.types import Numeric
 

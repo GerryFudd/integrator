@@ -1,10 +1,178 @@
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import Dict, Tuple, List
 
-from custom_numbers.computation import Number, RationalNumber
 from custom_numbers.types import Numeric
 from custom_numbers.utils import gcd
+
+
+rational_tol = 1000000000000000
+
+
+class RationalNumber:
+    @staticmethod
+    def from_float(f: float):
+        if f < 0:
+            return -RationalNumber.from_float(-f)
+        numerator = int(f)
+        denominator = 1
+        r = f - numerator
+        n = 0
+        while r > 0 and n < 12:
+            n += 1
+            numerator = numerator << 4
+            denominator = denominator << 4
+            r *= 16
+            numerator += int(r)
+            r = r % 1
+        if r > 0:
+            return None
+        return RationalNumber(numerator, denominator)
+
+    @staticmethod
+    def from_dec(dec: Decimal):
+        return RationalNumber(*dec.as_integer_ratio())
+
+    @staticmethod
+    def from_dec_str(dec_str: str):
+        return RationalNumber.from_dec(Decimal(dec_str))
+
+    @staticmethod
+    def resolve(x) -> RationalNumber:
+        if isinstance(x, str):
+            return RationalNumber.from_dec_str(x)
+        if isinstance(x, RationalNumber):
+            return x
+        if isinstance(x, int):
+            return RationalNumber(x)
+        if isinstance(x, float):
+            return RationalNumber.from_float(x)
+        if isinstance(x, Decimal):
+            return RationalNumber.from_dec(x)
+        raise NotImplementedError
+
+    def __init__(self, numerator: int, denominator: int = 1):
+        if denominator == 0:
+            raise NotImplementedError
+        if denominator > rational_tol:
+            self.numerator, self.denominator = Decimal(str(
+                numerator / denominator
+            )).as_integer_ratio()
+            return
+        c = gcd(numerator, denominator)
+        if denominator < 0:
+            c = -c
+        self.numerator = numerator // c
+        self.denominator = denominator // c
+
+    def __str__(self):
+        if self.denominator == 1:
+            return str(self.numerator)
+        return str(self.numerator / self.denominator)
+
+    def __add__(self, other):
+        summand = self.resolve(other)
+        new_denominator = self.denominator * summand.denominator
+        new_numerator = self.numerator * summand.denominator \
+                        + summand.numerator * self.denominator
+        return RationalNumber(new_numerator, new_denominator)
+
+    def __radd__(self, other):
+        return self + other
+
+    def __mul__(self, other):
+        multiplicand = self.resolve(other)
+        return RationalNumber(
+            self.numerator * multiplicand.numerator,
+            self.denominator * multiplicand.denominator,
+            )
+
+    def __rmul__(self, other):
+        return self * other
+
+    def __pow__(self, power, modulo=None):
+        exponent = self.resolve(power)
+        if exponent.denominator == 1 and not modulo:
+            if exponent.numerator < 0:
+                return RationalNumber(self.denominator, self.numerator) \
+                       ** -exponent
+            return RationalNumber(
+                self.numerator ** exponent.numerator,
+                self.denominator ** exponent.numerator,
+                )
+        raise NotImplementedError
+
+    def __sub__(self, other):
+        return -(-self + other)
+
+    def __rsub__(self, other):
+        return -self + other
+
+    def flip(self) -> RationalNumber:
+        return RationalNumber(
+            self.denominator,
+            self.numerator,
+        )
+
+    def __truediv__(self, other):
+        return self * self.resolve(other).flip()
+
+    def __rtruediv__(self, other):
+        return self.flip() * other
+
+    def __repr__(self):
+        return f'RationalNumber(numerator={self.numerator}, denominator=' \
+               f'{self.denominator})'
+
+    def __eq__(self, other):
+        if isinstance(other, RationalNumber):
+            return self.numerator * other.denominator == \
+                   self.denominator * other.numerator
+        return self.numerator == self.denominator * other
+
+    def __req__(self, other):
+        return self == other
+
+    def __hash__(self):
+        if self.denominator == 1:
+            return hash(self.numerator)
+        return hash(self.numerator / self.denominator)
+
+    def __ne__(self, other):
+        return not (self == other)
+
+    def __lt__(self, other):
+        return self.numerator < self.denominator * other
+
+    def __le__(self, other):
+        return self.numerator <= self.denominator * other
+
+    def __gt__(self, other):
+        return not (self <= other)
+
+    def __ge__(self, other):
+        return not (self < other)
+
+    def __neg__(self):
+        return RationalNumber(-self.numerator, self.denominator)
+
+    def __abs__(self):
+        if self.numerator >= 0:
+            return RationalNumber(self.numerator, self.denominator)
+        return -self
+
+    def __round__(self, n=None):
+        new_denominator = 10 ** n
+        new_numerator, remainder = divmod(
+            self.numerator * new_denominator, self.denominator
+        )
+        if remainder * 2 >= self.denominator:
+            new_numerator += 1
+        return RationalNumber(new_numerator, new_denominator)
+
+    def to_decimal(self) -> Decimal:
+        return Decimal(self.numerator) / Decimal(self.denominator)
 
 
 class PrimeFactorization:
@@ -133,7 +301,7 @@ class RadicalTerm:
             self.coefficient.flip(), self.root, self.content.flip(),
         )
 
-    def to_number(self) -> Number:
+    def to_number(self) -> Decimal:
         return self.content.to_decimal() \
                ** RationalNumber(1, self.root).to_decimal() \
                * self.coefficient.to_decimal()
@@ -257,8 +425,8 @@ class ExactNumber:
             return
         self.radical_terms = list(radical_terms)
 
-    def to_number(self) -> Numeric:
-        return sum(map(lambda x: x.to_number(), self.radical_terms), Number.of(0))
+    def to_number(self) -> Decimal:
+        return sum(map(lambda x: x.to_number(), self.radical_terms), Decimal(0))
 
     def __str__(self):
         return ' + '.join(map(str, self.radical_terms))
