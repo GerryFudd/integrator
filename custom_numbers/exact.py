@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Dict, Tuple, List
 
 from custom_numbers.computation import Number, RationalNumber
+from custom_numbers.types import Numeric
 from custom_numbers.utils import gcd
 
 
@@ -57,11 +58,11 @@ def factor(n: int) -> PrimeFactorization:
 class RadicalTerm:
     @staticmethod
     def of(
-        coefficient: RationalNumber,
+        coefficient: Numeric,
         root: int = 1,
         content: RationalNumber = RationalNumber(1),
     ):
-        return RadicalTerm(coefficient, root, content).__reduce()
+        return RadicalTerm(RationalNumber.resolve(coefficient), root, content).__reduce()
 
     def __init__(
         self,
@@ -133,8 +134,8 @@ class RadicalTerm:
         )
 
     def to_number(self) -> Number:
-        return Number(self.content.to_decimal()) \
-               ** RationalNumber(1, self.root) \
+        return self.content.to_decimal() \
+               ** RationalNumber(1, self.root).to_decimal() \
                * self.coefficient.to_decimal()
 
     def __add__(self, other):
@@ -205,11 +206,14 @@ class RadicalTerm:
     def __rtruediv__(self, other):
         return self.flip() * other
 
+    def __hash__(self):
+        return hash(self.to_number())
+
     def __eq__(self, other):
         if isinstance(other, RadicalTerm):
             return self.root == other.root \
-                and self.coefficient == other.coefficient \
-                and self.content == other.content
+                   and self.coefficient == other.coefficient \
+                   and self.content == other.content
         if self.root == 1:
             return self.coefficient == other
         return False
@@ -236,3 +240,135 @@ class RadicalTerm:
 
     def __abs__(self):
         return RadicalTerm(abs(self.coefficient), self.root, self.content)
+
+
+class ExactNumber:
+    @staticmethod
+    def of(x: Numeric):
+        if isinstance(x, ExactNumber):
+            return x
+        if isinstance(x, RadicalTerm):
+            return ExactNumber(x)
+        return ExactNumber(RadicalTerm.of(x))
+
+    def __init__(self, *radical_terms: RadicalTerm):
+        if len(radical_terms) == 0:
+            self.radical_terms = [RadicalTerm(RationalNumber(0))]
+            return
+        self.radical_terms = list(radical_terms)
+
+    def to_number(self) -> Numeric:
+        return sum(map(lambda x: x.to_number(), self.radical_terms), Number.of(0))
+
+    def __str__(self):
+        return ' + '.join(map(str, self.radical_terms))
+
+    def __repr__(self):
+        return f'ExactNumber({",".join(map(str, self.radical_terms))})'
+
+    def __add__(self, other):
+        if isinstance(other, RadicalTerm):
+            result_terms = []
+            for radical_term in self.radical_terms:
+                if radical_term.root == other.root \
+                        and radical_term.content == other.content:
+                    t = radical_term + other
+                    if t != RationalNumber(0):
+                        result_terms.append(t)
+                    continue
+                result_terms.append(radical_term)
+            return ExactNumber(*result_terms)
+        if isinstance(other, ExactNumber):
+            return sum(other.radical_terms, self)
+        return self + RadicalTerm.of(other)
+
+    def __radd__(self, other):
+        return self + other
+
+    def __mul__(self, other):
+        if isinstance(other, RadicalTerm):
+            return sum(map(
+                lambda x: x * other, self.radical_terms
+            ), ExactNumber())
+        if isinstance(other, ExactNumber):
+            return sum(map(
+                lambda x: self * x, other.radical_terms
+            ), ExactNumber())
+        if isinstance(other, Numeric):
+            return self * RadicalTerm.of(other)
+        return other.__rmul__(self)
+
+    def __rmul__(self, other):
+        return self * other
+
+    def __pow__(self, power, modulo=None):
+        if isinstance(power, int):
+            result = ExactNumber.of(1)
+            n = 0
+            while n < power:
+                n += 1
+                result *= self
+            return result
+        if isinstance(power, RationalNumber):
+            if len(self.radical_terms) == 1:
+                return ExactNumber(self.radical_terms[0] ** power)
+            if power.denominator == 1:
+                return self ** power.numerator
+        if isinstance(power, float):
+            return self ** RationalNumber.from_float(power)
+        raise NotImplementedError
+
+    def __sub__(self, other):
+        return self + -other
+
+    def __rsub__(self, other):
+        return -self + other
+
+    def __truediv__(self, other):
+        if isinstance(other, ExactNumber):
+            if len(other.radical_terms) > 1:
+                raise NotImplementedError
+            return self / other.radical_terms[0]
+        if isinstance(other, RadicalTerm):
+            return self * other.flip()
+
+        return self / RadicalTerm.of(other)
+
+    def __rtruediv__(self, other):
+        if len(self.radical_terms) == 1:
+            return ExactNumber(self.radical_terms[0].flip()) * other
+        raise NotImplementedError
+
+    def __eq__(self, other):
+        if isinstance(other, ExactNumber):
+            return set(self.radical_terms) == set(other.radical_terms)
+        if len(self.radical_terms) == 1:
+            return self.radical_terms[0] == other
+        return False
+
+    def __ne__(self, other):
+        return not (self == other)
+
+    def __lt__(self, other):
+        if isinstance(other, ExactNumber):
+            return self < other.to_number()
+        return self.to_number() < other
+
+    def __le__(self, other):
+        if isinstance(other, ExactNumber):
+            return self <= other.to_number()
+        return self.to_number() <= other
+
+    def __gt__(self, other):
+        return -self < -other
+
+    def __ge__(self, other):
+        return -self <= -other
+
+    def __neg__(self):
+        return ExactNumber(*map(lambda x: -x, self.radical_terms))
+
+    def __abs__(self):
+        if self < 0:
+            return -self
+        return self

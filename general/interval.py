@@ -1,30 +1,10 @@
 from __future__ import annotations
 
-from custom_numbers.computation import Number
 from custom_numbers.types import Numeric
 from custom_numbers.utils import minimum, maximum
 
 
 class Interval:
-    @staticmethod
-    def parse(string: str):
-        opening_bracket = string[0]
-        if opening_bracket not in ['[', '(']:
-            raise NotImplementedError
-        include_left = opening_bracket == '['
-        closing_bracket = string[-1]
-        if closing_bracket not in [']', ')']:
-            raise NotImplementedError
-        include_right = closing_bracket == ']'
-        parts = string[1:-1].split(',')
-        if len(parts) != 2:
-            raise NotImplementedError
-        return Interval(
-            Number.parse(parts[0].strip()),
-            Number.parse(parts[1].strip()),
-            include_left, include_right
-        )
-
     def __init__(
         self, a: Numeric, b: Numeric,
         include_left: bool = False,

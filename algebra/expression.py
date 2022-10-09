@@ -1,6 +1,5 @@
-from typing import TypeVar
+from typing import TypeVar, Callable
 
-from custom_numbers.computation import Number
 from custom_numbers.types import Numeric
 from general.vector import Vector
 
@@ -10,7 +9,9 @@ SolutionType = TypeVar('SolutionType')
 
 
 class PolynomialExpression:
-    def __init__(self, *coefficients: Numeric):
+    def __init__(
+        self, *coefficients: Numeric
+    ):
         self.coefficients = Vector(*coefficients)
 
     @staticmethod
@@ -32,6 +33,11 @@ class PolynomialExpression:
 
     def __getitem__(self, item):
         return self.coefficients[item]
+
+    def to_type(
+        self, map_to_type: Callable[[Numeric], Numeric] = lambda x: x,
+    ):
+        return PolynomialExpression(*map(map_to_type, self.coefficients))
 
     def __eq__(self, other):
         return self.coefficients == other.coefficients
@@ -64,7 +70,7 @@ class PolynomialExpression:
 
     def __truediv__(self, other):
         if isinstance(other, Numeric):
-            return (1/Number.of(other)) * self
+            return PolynomialExpression(*(self.coefficients / other))
         raise NotImplementedError
 
     def __neg__(self):

@@ -1,12 +1,11 @@
 from __future__ import annotations
-from custom_numbers.computation import Number
 from custom_numbers.types import Numeric
 from custom_numbers.utils import maximum
 
 
 class Vector:
     def __init__(self, *coefficients: Numeric):
-        self.coefficients = list(map(Number.of, coefficients))
+        self.coefficients = list(coefficients)
 
     def __str__(self):
         return f'<{",".join(map(str, self.coefficients))}>'
@@ -33,6 +32,9 @@ class Vector:
 
     def __rmul__(self, other):
         return Vector(*map(lambda x: other * x, self.coefficients))
+
+    def __truediv__(self, other):
+        return Vector(*map(lambda x: x / other, self.coefficients))
 
     def __neg__(self):
         return -1 * self

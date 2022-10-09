@@ -170,19 +170,15 @@ def test_radical_term_constructor():
 
 
 def test_radical_term_sum():
-    a = RadicalTerm(RationalNumber(7), 2, RationalNumber(5))
-    b = RadicalTerm(RationalNumber(4), 2, RationalNumber(5))
-    assert a + b == RadicalTerm(RationalNumber(11), 2, RationalNumber(5))
+    a = RadicalTerm.of(7, 2, RationalNumber(5))
+    b = RadicalTerm.of(4, 2, RationalNumber(5))
+    assert a + b == RadicalTerm.of(11, 2, RationalNumber(5))
 
 
 def test_radical_term_prod():
     a = RadicalTerm(RationalNumber(7), 6, RationalNumber(3))
     b = RadicalTerm(RationalNumber(4), 10, RationalNumber(4))
-    assert a * b == RadicalTerm(
-        RationalNumber(28),
-        30,
-        RationalNumber(3 ** 5 * 4 ** 3)
-    )
+    assert a * b == RadicalTerm.of(28, 30, RationalNumber(3 ** 5 * 4 ** 3))
 
 
 def test_radical_term_eq_rational():
@@ -196,7 +192,7 @@ def test_radical_term_reduce():
         RationalNumber(6, 7)
     assert RadicalTerm.of(RationalNumber(3, 7), 2, RationalNumber(8, 9)) == \
         RadicalTerm(RationalNumber(6, 21), 2, RationalNumber(2))
-    assert RadicalTerm.of(RationalNumber(1), 2, RationalNumber(
+    assert RadicalTerm.of(1, 2, RationalNumber(
         23**2*29**3*101, 24
     )) == RadicalTerm(RationalNumber(23*29, 2), 2, RationalNumber(29*101, 6))
 

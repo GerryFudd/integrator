@@ -2,6 +2,8 @@ from decimal import Decimal
 from enum import Enum
 from typing import Callable
 
+from custom_numbers.exact import ExactNumber
+from custom_numbers.utils import minimum, maximum
 from elementary_functions.polynomial import Polynomial
 from elementary_functions.power import PowerFunction
 from elementary_functions.simple import CharacteristicFunction, Interval, \
@@ -9,7 +11,6 @@ from elementary_functions.simple import CharacteristicFunction, Interval, \
 from elementary_functions.utils import FunctionSum
 from custom_numbers.computation import Number, RationalNumber
 from custom_numbers.types import Numeric
-from .utils import get_local_extrema, output_range
 
 
 class Mode(Enum):
@@ -94,7 +95,7 @@ class Integrator:
                             ' of 1 will never identify any error in the results'
                             ' because this will only evaluate the function at'
                             ' its endpoints.')
-        tolerance = Number(r=RationalNumber(1, 10 ** (precision + 1) * 2))
+        tolerance = Number.of(RationalNumber(1, 10 ** (precision + 1) * 2))
         allowed_error = tolerance / 10
         initial_candidate = [
             Number.of(a) + error_func_lower(allowed_error),
@@ -116,7 +117,7 @@ class Integrator:
             new_errors = []
             for n in range(len(candidates)):
                 if (candidates[n][1] - candidates[n][0]) * tolerance \
-                        > (b - a) * errors[n]:
+                    > (b - a) * errors[n]:
                     sample.append(candidates[n])
                     total_error = total_error + errors[n]
                 else:
@@ -129,7 +130,7 @@ class Integrator:
                         ]
                         new_candidates.append(candidate)
                         new_errors.append(self.__get_max_error_for_interval(
-                                candidate[0], candidate[1], resolution
+                            candidate[0], candidate[1], resolution
                         ))
             candidates = new_candidates
             errors = new_errors
@@ -146,25 +147,81 @@ class Integrator:
 
 
 def integrate_exact(func, a, b):
+    exact_a = ExactNumber.of(a)
+    exact_b = ExactNumber.of(b)
     if isinstance(func, PowerFunction):
         new_power = func.power + 1
         anti_derivative = PowerFunction(
             new_power,
-            Number.of(func.coefficient) / new_power
+            ExactNumber.of(func.coefficient) / new_power
         )
-        return anti_derivative.evaluate(b) - anti_derivative.evaluate(a)
+        return anti_derivative.evaluate(exact_b) \
+            - anti_derivative.evaluate(exact_a)
     if isinstance(func, FunctionSum) \
-        or isinstance(func, Polynomial) \
-        or isinstance(func, SimpleFunction):
+            or isinstance(func, Polynomial) \
+            or isinstance(func, SimpleFunction):
         return sum(map(
-            lambda x: integrate_exact(x, a, b),
+            lambda x: integrate_exact(x, exact_a, exact_b),
             func.constituents
         ))
     if isinstance(func, CharacteristicFunction):
-        if not func.domain.intersects(Interval(a, b)):
+        if not func.domain.intersects(Interval(exact_a, exact_b)):
             return 0
         return func.coefficient * (
-            func.domain * Interval(a, b)
+            func.domain * Interval(exact_a, exact_b)
         ).measure()
 
     raise NotImplementedError
+
+
+def output_range(func, lower, upper, resolution=100):
+    # Convert lower and upper bounds to decimals to make arithmetic more
+    # predictable (eg dividing values into intervals can be precise with
+    # decimals when it isn't necessarily with binary representations)
+    lower_in = Number.of(lower)
+    upper_in = Number.of(upper)
+
+    # Capture the outputs at the lower and upper endpoints
+    lower_val = func(lower_in)
+    upper_val = func(upper_in)
+
+    # These are the minimum and maximum outputs on this interval.
+    # They are initialized as the minimum and maximum from the ends of the
+    # interval. These values are corrected as values from the middle are
+    # sampled.
+    abs_minimum = minimum(lower_val, upper_val)
+    abs_maximum = maximum(lower_val, upper_val)
+    for n in range(1, resolution):
+        # This is the current sampled value. It will increase linearly
+        # from lower_decimal to upper_decimal. The actual lower_decimal
+        # and upper_decimal values are not re-sampled because they were already
+        # captured.
+        x = lower_in + (upper_in - lower_in) * n / resolution
+        val = func(x)
+        abs_minimum = minimum(abs_minimum, val)
+        abs_maximum = maximum(abs_maximum, val)
+    return abs_minimum, abs_maximum
+
+
+def get_local_extrema(func, a, b, resolution=100):
+    last_direction = 0
+    a_in = Number.of(a)
+    b_in = Number.of(b)
+    last_x = a_in
+    last_val = func(last_x)
+    local_extrema = []
+    for n in range(1, resolution + 1):
+        x = a_in \
+            + (b_in - a_in) * n / resolution
+        val = func(x)
+        direction = val - last_val
+
+        if last_direction <= 0 < direction:
+            local_extrema.append(last_x)
+        if direction < 0 <= last_direction:
+            local_extrema.append(last_x)
+        last_x = x
+        last_val = val
+        last_direction = direction
+    local_extrema.append(b)
+    return local_extrema

@@ -15,6 +15,10 @@ class Numeric(Protocol):
         raise NotImplementedError
 
     @abstractmethod
+    def __radd__(self, other):
+        raise NotImplementedError
+
+    @abstractmethod
     def __mul__(self, other):
         raise NotImplementedError
 

@@ -8,7 +8,7 @@ from elementary_functions.polynomial import Polynomial
 from elementary_functions.power import PowerFunction
 from elementary_functions.simple import CharacteristicFunction, \
     SimpleFunction, Interval
-from custom_numbers.computation import RationalNumber
+from custom_numbers.computation import RationalNumber, Number
 
 
 class TestIntegrator(TestCase):
@@ -77,7 +77,7 @@ class TestIntegrator(TestCase):
     def test_calculate_circle_area(self):
         circle = Circle(0, 0, 1)
         integrator = Integrator(
-            lambda x: 4 * circle.evaluate(x),
+            lambda x: 4 * circle.evaluate(Number.of(x)),
             Mode.DECREASING
         )
         first_approximation = integrator.integrate(0, 1, 10)

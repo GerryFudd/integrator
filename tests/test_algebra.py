@@ -4,6 +4,7 @@ from algebra.solvable import Condition
 from algebra.linear import LinearEquation, LinearInequality
 from algebra.quadratic import QuadraticEquation, QuadraticInequality
 from algebra.expression import PolynomialExpression
+from custom_numbers.exact import ExactNumber
 from general.interval import Interval
 
 
@@ -19,7 +20,7 @@ def test_solve_linear_inequality_lt():
         PolynomialExpression(-3, 1),
         PolynomialExpression(4, 0),
         Condition.lt()
-    ).solve() == [Interval.parse('(-inf, 7)')]
+    ).solve() == [Interval(-inf, 7)]
 
 
 def test_solve_linear_inequality_le():
@@ -27,7 +28,7 @@ def test_solve_linear_inequality_le():
         PolynomialExpression(-3, 1),
         PolynomialExpression(4, 0),
         Condition.le()
-    ).solve() == [Interval.parse('(-inf, 7]')]
+    ).solve() == [Interval(-inf, 7, include_right=True)]
 
 
 def test_solve_linear_inequality_gt():
@@ -35,7 +36,7 @@ def test_solve_linear_inequality_gt():
         PolynomialExpression(-3, 1),
         PolynomialExpression(4, 0),
         Condition.gt()
-    ).solve() == [Interval.parse('(7, inf)')]
+    ).solve() == [Interval(7, inf)]
 
 
 def test_solve_linear_inequality_ge():
@@ -43,7 +44,7 @@ def test_solve_linear_inequality_ge():
         PolynomialExpression(-3, 1),
         PolynomialExpression(4, 0),
         Condition.ge()
-    ).solve() == [Interval.parse('[7, inf)')]
+    ).solve() == [Interval(7, inf, True)]
 
 
 def test_solve_linear_with_division():
@@ -62,8 +63,8 @@ def test_solve_linear_with_cancellation():
 
 def test_solve_quadratic_simple():
     assert QuadraticEquation(
-        PolynomialExpression(-1, 0, 1),
-        PolynomialExpression(0, 0, 0)
+        PolynomialExpression(-1, 0, 1).to_type(ExactNumber.of),
+        PolynomialExpression(0, 0, 0).to_type(ExactNumber.of)
     ).solve() == [-1, 1]
 
 
@@ -80,7 +81,7 @@ def test_solve_quadratic_inequality_simple_le():
         PolynomialExpression(-1, 0, 1),
         PolynomialExpression(0, 0, 0),
         Condition.le()
-    ).solve() == [Interval.parse('[-1, 1]')]
+    ).solve() == [Interval(-1, 1, True, True)]
 
 
 def test_solve_quadratic_inequality_simple_gt():
@@ -96,7 +97,7 @@ def test_solve_quadratic_inequality_simple_ge():
         PolynomialExpression(-1, 0, 1),
         PolynomialExpression(0, 0, 0),
         Condition.ge()
-    ).solve() == [Interval.parse('(-inf, -1]'), Interval.parse('[1, inf)')]
+    ).solve() == [Interval(-inf, -1, False, True), Interval(1, inf, True)]
 
 
 def test_solve_quadratic():
@@ -133,7 +134,7 @@ def test_solve_quadratic_inequality_reduces_linear_le():
         PolynomialExpression(-5, 4, 15),
         PolynomialExpression(2, -10, 15),
         Condition.le()
-    ).solve() == [Interval.parse('(-inf, 0.5]')]
+    ).solve() == [Interval(-inf, 0.5, False, True)]
 
 
 def test_solve_quadratic_inequality_reduces_linear_gt():
@@ -149,4 +150,4 @@ def test_solve_quadratic_inequality_reduces_linear_ge():
         PolynomialExpression(-5, 4, 15),
         PolynomialExpression(2, -10, 15),
         Condition.ge()
-    ).solve() == [Interval.parse('[0.5, inf)')]
+    ).solve() == [Interval(0.5, inf, True)]

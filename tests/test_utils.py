@@ -1,4 +1,4 @@
-from calculus.utils import get_local_extrema
+from calculus.integrator import get_local_extrema
 
 
 def test_get_local_extrema_for_line():

@@ -1,7 +1,7 @@
 from __future__ import annotations
 from decimal import Decimal
 from math import inf, isinf
-from typing import Callable, TypeVar
+from typing import TypeVar
 
 from custom_numbers.types import Numeric
 from custom_numbers.utils import gcd
@@ -192,23 +192,20 @@ class Number:
             if f < 0:
                 return Number(inf_type=-1)
             return Number(inf_type=1)
-        r = RationalNumber.from_float(f)
-        if r is None:
-            return Number(Decimal(str(f)))
-        return Number(r=r)
+        return Number(Decimal(str(f)))
 
     @staticmethod
     def of(x: Numeric):
         if isinstance(x, Decimal):
             return Number(x)
         if isinstance(x, Number):
-            return Number(x.d, x.r)
+            return Number(x.d, x.inf_type)
         if isinstance(x, int):
-            return Number(Decimal(x), RationalNumber(x))
+            return Number(Decimal(x))
         if isinstance(x, float):
             return Number.of_float(x)
         if isinstance(x, RationalNumber):
-            return Number(r=x)
+            return Number(x.to_decimal())
 
     @staticmethod
     def parse(s: str):
@@ -219,72 +216,28 @@ class Number:
         return Number.of(Decimal(s))
 
     def __init__(
-        self, d: Decimal = None, r: RationalNumber = None,
+        self, d: Decimal = None,
         inf_type: int = 0
     ):
         self.inf_type = inf_type
         self.d: Decimal = d
-        self.r: RationalNumber = r
 
     def __str__(self):
         if self.inf_type != 0:
             return 'inf' if self.inf_type > 0 else '-inf'
-        return str(self.r) if self.d is None else str(self.d)
+        return str(self.d)
 
     def __repr__(self):
         return f'Number(d={self.d},inf_type={self.inf_type})'
 
-    def to_decimal(self) -> Decimal:
-        if self.d is None:
-            return self.r.to_decimal()
-        return self.d
-
-    def to_rational(self):
-        if self.r is None:
-            return RationalNumber.from_dec(self.d)
-        return self.r
-
-    def get_decimal_or_rational(self) -> Numeric:
-        return self.r if self.d is None else self.d
-
-    def get_rational_or_decimal(self) -> Numeric:
-        return self.d if self.r is None else self.r
-
-    def try_decimal(
-        self,
-        other: Numeric,
-        operation: Callable[[T, Numeric], T]
-    ) -> Number:
-        if isinstance(other, Number):
-            return Number(operation(
-                self.to_decimal(),
-                other.to_decimal()
-            ))
-        if isinstance(other, RationalNumber):
-            return Number(operation(self.to_decimal(), other.to_decimal()))
-        return Number(operation(self.to_decimal(), other))
-
-    def try_rational(
-        self,
-        other: Numeric,
-        operation: Callable[[T, Numeric], T]
-    ):
-        if self.r is None:
-            if isinstance(other, Number):
-                return Number(operation(
-                    self.d,
-                    other.to_decimal()
-                ))
-            return Number(operation(self.d, other))
-
-        if isinstance(other, Number):
-            return Number(r=operation(self.r, other.get_rational_or_decimal()))
-        return Number(r=operation(self.r, other))
-
     def __add__(self, other):
         if self.inf_type != 0:
             return Number(inf_type=self.inf_type)
-        return self.try_decimal(other, lambda x, y: x + y)
+        if isinstance(other, Number):
+            return self + other.d
+        if isinstance(other, RationalNumber):
+            return Number(self.d + other.to_decimal())
+        return Number(self.d + other)
 
     def __radd__(self, other):
         return self + other
@@ -296,37 +249,21 @@ class Number:
             if other < 0:
                 return Number(inf_type=-self.inf_type)
             return Number(inf_type=self.inf_type)
+        if isinstance(other, Number):
+            return Number(self.d * other.d)
         if isinstance(other, Numeric):
-            return self.try_rational(other, lambda x, y: x * y)
+            return self * Number.of(other)
         return other.__rmul__(self)
 
     def __rmul__(self, other):
         return self * other
 
-    def __int_pow__(self, power: int):
-        if power < 0:
-            return Number(r=RationalNumber(
-                self.r.denominator ** -power,
-                self.r.numerator ** -power,
-            ))
-        return Number(r=RationalNumber(
-            self.r.numerator ** power,
-            self.r.denominator ** power,
-        ))
-
     def __pow__(self, power, modulo=None):
         if self.inf_type != 0:
             raise NotImplementedError
-        if isinstance(power, int) or (
-            isinstance(power, RationalNumber) and power.denominator == 1
-        ):
-            return self.try_rational(power, lambda x, y: x ** y)
-        if isinstance(power, float):
-            return self.try_decimal(
-                self.float_to_dec(power),
-                lambda x, y: pow(x, y, modulo)
-            )
-        return self.try_decimal(power, lambda x, y: pow(x, y, modulo))
+        if isinstance(power, Number):
+            return Number(pow(self.d, power.d, modulo))
+        return pow(self, Number.of(power), modulo)
 
     def __sub__(self, other):
         return self + -other
@@ -335,15 +272,23 @@ class Number:
         return -(self + -other)
 
     def __truediv__(self, other):
-        return self.try_rational(other, lambda x, y: x / y)
+        if self.inf_type != 0:
+            return Number(None, self.inf_type)
+        if isinstance(other, Number):
+            if other.inf_type != 0:
+                return Number.of(0)
+            return Number(self.d / other.d)
+        if isinstance(other, RationalNumber):
+            return Number(self.d * other.flip().to_decimal())
+        return Number(self.d / other)
 
     def __rtruediv__(self, other):
-        return self.try_rational(other, lambda x, y: (1/x)*y)
+        if isinstance(other, RationalNumber):
+            return Number(other.to_decimal() / self.d)
+        return Number.of(other) / self
 
     def __eq__(self, other):
         if isinstance(other, Number):
-            if self.r is not None:
-                return other == self.r
             return other == self.d
         if self.inf_type != 0:
             if isinstance(other, Number):
@@ -353,14 +298,12 @@ class Number:
                     or self.inf_type > 0 and other > 0
             return False
 
-        if self.r is not None:
-            return self.r == other
         return self.d == other
 
     def __hash__(self):
         if self.inf_type != 0:
             return hash(inf if self.inf_type > 0 else -inf)
-        return hash(self.to_decimal())
+        return hash(self.d)
 
     def __ne__(self, other):
         return not (self == other)
@@ -371,10 +314,10 @@ class Number:
         if isinstance(other, Number):
             if other.inf_type != 0:
                 return other.inf_type > 0
-            return self.to_decimal() < other.to_decimal()
+            return self.d < other.d
         if isinstance(other, RationalNumber):
-            return self.to_rational() < other
-        return self.to_decimal() < other
+            return self.d < other.to_decimal()
+        return self.d < other
 
     def __le__(self, other):
         return self == other or self < other
@@ -388,14 +331,12 @@ class Number:
     def __neg__(self):
         return Number(
             None if self.d is None else -self.d,
-            None if self.r is None else -self.r,
             -self.inf_type
         )
 
     def __abs__(self):
         return Number(
             None if self.d is None else abs(self.d),
-            None if self.r is None else abs(self.r),
             abs(self.inf_type)
         )
 
@@ -403,4 +344,4 @@ class Number:
         if self.inf_type != 0:
             return self
         # noinspection PyTypeChecker
-        return Number(round(self.to_decimal(), n))
+        return Number(round(self.d, n))
