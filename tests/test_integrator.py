@@ -8,13 +8,13 @@ from elementary_functions.polynomial import Polynomial
 from elementary_functions.power import PowerFunction
 from elementary_functions.simple import CharacteristicFunction, \
     SimpleFunction, Interval
-from custom_numbers.computation import Number
+from custom_numbers.computation import DecimalNumber
 
 
 class TestIntegrator(TestCase):
     def test_integrate_linear(self):
         result = Integrator(
-            Number.of(0), Polynomial(0, 2).evaluate
+            DecimalNumber.of(0), Polynomial(0, 2).evaluate
         ).integrate(0, 2, 4)
         assert result.trap == 4
         assert result.min == 3
@@ -52,7 +52,7 @@ class TestIntegrator(TestCase):
 
     def test_integrate_linear_increasing(self):
         result = Integrator(
-            Number.of(0),
+            DecimalNumber.of(0),
             Polynomial(0, 2).evaluate, Mode.INCREASING
         ).integrate(0, 2, 4)
         assert result.trap == 4
@@ -61,7 +61,7 @@ class TestIntegrator(TestCase):
 
     def test_integrate_linear_decreasing(self):
         result = Integrator(
-            Number.of(0),
+            DecimalNumber.of(0),
             Polynomial(0, -2).evaluate, Mode.DECREASING
         ).integrate(0, 2, 4)
         assert result.trap == -4
@@ -70,7 +70,7 @@ class TestIntegrator(TestCase):
 
     def test_integrate_parabola(self):
         integrator = Integrator(
-            Number.of(0),
+            DecimalNumber.of(0),
             lambda x: 3 * x ** 2,
         )
         basic_result = integrator.integrate(-1, 1, 4)
@@ -84,7 +84,7 @@ class TestIntegrator(TestCase):
 
     def test_calculate_circle_area(self):
         circle = Circle(0, 0, 2)
-        integrator = Integrator(Number.of(0), circle.evaluate, Mode.DECREASING)
+        integrator = Integrator(DecimalNumber.of(0), circle.evaluate, Mode.DECREASING)
         first_approximation = integrator.integrate(0, 2, 10)
         assert round(first_approximation.trap, 1) == Decimal('3.1')
         assert first_approximation.max > first_approximation.min
@@ -99,7 +99,7 @@ class TestIntegrator(TestCase):
 
     def test_calculate_circle_area_to_precision_one(self):
         integrator = Integrator(
-            Number.of(0),
+            DecimalNumber.of(0),
             lambda x: 4 * (1 - x ** 2) ** Decimal('0.5'),
             Mode.DECREASING
         )
@@ -110,7 +110,7 @@ class TestIntegrator(TestCase):
         elliptic_function = EllipticFunction(2)
 
         elliptic_integrator_doubled = Integrator(
-            Number.of(0),
+            DecimalNumber.of(0),
             elliptic_function.evaluate,
             Mode.DECREASING
         )

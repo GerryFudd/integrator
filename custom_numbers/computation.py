@@ -7,7 +7,7 @@ from custom_numbers.exact import ExactNumber, RationalNumber
 from custom_numbers.types import Numeric
 
 
-class Number:
+class DecimalNumber:
     @staticmethod
     def float_to_dec(f: float):
         if isinf(f):
@@ -19,30 +19,30 @@ class Number:
     def of_float(f: float):
         if isinf(f):
             if f < 0:
-                return Number(inf_type=-1)
-            return Number(inf_type=1)
-        return Number(Decimal(str(f)))
+                return DecimalNumber(inf_type=-1)
+            return DecimalNumber(inf_type=1)
+        return DecimalNumber(Decimal(str(f)))
 
     @staticmethod
     def of(x: Numeric):
         if isinstance(x, Decimal):
-            return Number(x)
-        if isinstance(x, Number):
-            return Number(x.d, x.inf_type)
+            return DecimalNumber(x)
+        if isinstance(x, DecimalNumber):
+            return DecimalNumber(x.d, x.inf_type)
         if isinstance(x, int):
-            return Number(Decimal(x))
+            return DecimalNumber(Decimal(x))
         if isinstance(x, float):
-            return Number.of_float(x)
+            return DecimalNumber.of_float(x)
         if isinstance(x, RationalNumber):
-            return Number(x.to_decimal())
+            return DecimalNumber(x.to_decimal())
 
     @staticmethod
     def parse(s: str):
         if s == 'inf':
-            return Number.of_float(inf)
+            return DecimalNumber.of_float(inf)
         if s == '-inf':
-            return Number.of_float(-inf)
-        return Number(Decimal(s))
+            return DecimalNumber.of_float(-inf)
+        return DecimalNumber(Decimal(s))
 
     def __init__(
         self, d: Decimal = None,
@@ -61,12 +61,12 @@ class Number:
 
     def __add__(self, other):
         if self.inf_type != 0:
-            return Number(inf_type=self.inf_type)
-        if isinstance(other, Number):
+            return DecimalNumber(inf_type=self.inf_type)
+        if isinstance(other, DecimalNumber):
             return self + other.d
         if isinstance(other, RationalNumber):
-            return Number(self.d + other.to_decimal())
-        return Number(self.d + other)
+            return DecimalNumber(self.d + other.to_decimal())
+        return DecimalNumber(self.d + other)
 
     def __radd__(self, other):
         return self + other
@@ -74,14 +74,14 @@ class Number:
     def __mul__(self, other):
         if self.inf_type != 0:
             if other == 0:
-                return Number(Decimal(0))
+                return DecimalNumber(Decimal(0))
             if other < 0:
-                return Number(inf_type=-self.inf_type)
-            return Number(inf_type=self.inf_type)
-        if isinstance(other, Number):
-            return Number(self.d * other.d)
+                return DecimalNumber(inf_type=-self.inf_type)
+            return DecimalNumber(inf_type=self.inf_type)
+        if isinstance(other, DecimalNumber):
+            return DecimalNumber(self.d * other.d)
         if isinstance(other, Numeric):
-            return self * Number.of(other)
+            return self * DecimalNumber.of(other)
         return other.__rmul__(self)
 
     def __rmul__(self, other):
@@ -90,9 +90,9 @@ class Number:
     def __pow__(self, power, modulo=None):
         if self.inf_type != 0:
             raise NotImplementedError
-        if isinstance(power, Number):
-            return Number(pow(self.d, power.d, modulo))
-        return pow(self, Number.of(power), modulo)
+        if isinstance(power, DecimalNumber):
+            return DecimalNumber(pow(self.d, power.d, modulo))
+        return pow(self, DecimalNumber.of(power), modulo)
 
     def __sub__(self, other):
         return self + -other
@@ -102,25 +102,25 @@ class Number:
 
     def __truediv__(self, other):
         if self.inf_type != 0:
-            return Number(None, self.inf_type)
-        if isinstance(other, Number):
+            return DecimalNumber(None, self.inf_type)
+        if isinstance(other, DecimalNumber):
             if other.inf_type != 0:
-                return Number.of(0)
-            return Number(self.d / other.d)
+                return DecimalNumber.of(0)
+            return DecimalNumber(self.d / other.d)
         if isinstance(other, RationalNumber):
-            return Number(self.d * other.flip().to_decimal())
-        return Number(self.d / other)
+            return DecimalNumber(self.d * other.flip().to_decimal())
+        return DecimalNumber(self.d / other)
 
     def __rtruediv__(self, other):
         if isinstance(other, RationalNumber):
-            return Number(other.to_decimal() / self.d)
-        return Number.of(other) / self
+            return DecimalNumber(other.to_decimal() / self.d)
+        return DecimalNumber.of(other) / self
 
     def __eq__(self, other):
-        if isinstance(other, Number):
+        if isinstance(other, DecimalNumber):
             return other == self.d
         if self.inf_type != 0:
-            if isinstance(other, Number):
+            if isinstance(other, DecimalNumber):
                 return self.inf_type * other.inf_type > 0
             if isinstance(other, float) and isinf(other):
                 return self.inf_type < 0 and other < 0 \
@@ -140,7 +140,7 @@ class Number:
     def __lt__(self, other):
         if self.inf_type != 0:
             return self.inf_type < 0
-        if isinstance(other, Number):
+        if isinstance(other, DecimalNumber):
             if other.inf_type != 0:
                 return other.inf_type > 0
             return self.d < other.d
@@ -158,13 +158,13 @@ class Number:
         return self == other or self > other
 
     def __neg__(self):
-        return Number(
+        return DecimalNumber(
             None if self.d is None else -self.d,
             -self.inf_type
         )
 
     def __abs__(self):
-        return Number(
+        return DecimalNumber(
             None if self.d is None else abs(self.d),
             abs(self.inf_type)
         )
@@ -173,7 +173,7 @@ class Number:
         if self.inf_type != 0:
             return self
         # noinspection PyTypeChecker
-        return Number(round(self.d, n))
+        return DecimalNumber(round(self.d, n))
 
 
-NumberType = TypeVar('NumberType', Number, ExactNumber)
+ComputationType = TypeVar('ComputationType', DecimalNumber, ExactNumber)

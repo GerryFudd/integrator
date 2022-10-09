@@ -1,4 +1,4 @@
-from custom_numbers.computation import NumberType
+from custom_numbers.computation import ComputationType
 from elementary_functions.utils import FunctionSum, ConstantFunction, \
     CompositeFunction
 from custom_numbers.types import Numeric
@@ -38,7 +38,7 @@ class PowerFunction:
             return f'{self.coefficient}x^{self.power}'
         return f'{self.coefficient}x^({self.power})'
 
-    def evaluate(self, x: NumberType) -> NumberType:
+    def evaluate(self, x: ComputationType) -> ComputationType:
         return (x ** self.power) * self.coefficient
 
     def __mul__(self, other):

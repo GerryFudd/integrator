@@ -1,14 +1,14 @@
 from abc import abstractmethod
 from typing import Protocol, List, runtime_checkable, Union
 
-from custom_numbers.computation import NumberType
+from custom_numbers.computation import ComputationType
 from custom_numbers.types import Numeric
 
 
 @runtime_checkable
 class Function(Protocol):
     @abstractmethod
-    def evaluate(self, x: NumberType) -> NumberType:
+    def evaluate(self, x: ComputationType) -> ComputationType:
         """A function must be able to take an input and render an output"""
         raise NotImplementedError
 
@@ -50,7 +50,7 @@ class FunctionSum:
             return False
         return self.constituents[0] == other
 
-    def evaluate(self, x: NumberType) -> NumberType:
+    def evaluate(self, x: ComputationType) -> ComputationType:
         return sum(map(lambda f: f.evaluate(x), self.constituents))
 
     def __mul__(self, other):
@@ -93,8 +93,8 @@ class FunctionProd:
             return False
         return self.constituents[0] == other
 
-    def evaluate(self, x: NumberType) -> NumberType:
-        result: Union[NumberType, None] = None
+    def evaluate(self, x: ComputationType) -> ComputationType:
+        result: Union[ComputationType, None] = None
         for f in self.constituents:
             if result is None:
                 result = f.evaluate(x)
@@ -158,7 +158,7 @@ class CompositeFunction:
         self.outer = outer
         self.inner = inner
 
-    def evaluate(self, x: NumberType) -> NumberType:
+    def evaluate(self, x: ComputationType) -> ComputationType:
         return self.outer.evaluate(self.inner.evaluate(x))
 
     def __mul__(self, other):

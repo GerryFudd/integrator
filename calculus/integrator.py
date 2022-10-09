@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Callable
 
-from custom_numbers.computation import NumberType
+from custom_numbers.computation import ComputationType
 from custom_numbers.exact import ExactNumber
 from custom_numbers.utils import minimum, maximum
 from elementary_functions.polynomial import Polynomial
@@ -27,8 +27,8 @@ class IntegrationResult:
 class Integrator:
     def __init__(
         self,
-        zero_val: NumberType,
-        func: Callable[[NumberType], NumberType],
+        zero_val: ComputationType,
+        func: Callable[[ComputationType], ComputationType],
         mode=Mode.FLUCTUATING
     ) -> None:
         self.zero_val = zero_val

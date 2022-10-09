@@ -2,7 +2,7 @@ from elementary_functions.polynomial import Polynomial
 from elementary_functions.power import PowerFunction
 
 
-from custom_numbers.computation import NumberType
+from custom_numbers.computation import ComputationType
 from custom_numbers.types import Numeric
 
 
@@ -19,7 +19,7 @@ class EllipticFunction:
     # The integral from 0 to t of this function is
     # 2 * a * EllipticE(t, k)
     # where k = 1 - 1 / a^2
-    def evaluate(self, x: NumberType) -> NumberType:
+    def evaluate(self, x: ComputationType) -> ComputationType:
         return 2 * (
             (self.a * self.a + (1 - self.a * self.a) * x ** 2)
             / (1 - x ** 2)
@@ -31,7 +31,7 @@ class EllipticFunction:
     # It uses a geometric notion to say that the arc length from
     # "x = a - ad" to "x = a" along the path of the ellipse is shorter than
     # the path that goes from (x, y) to (a, y) and then (a, 0).
-    def error_function(self, error: NumberType) -> NumberType:
+    def error_function(self, error: ComputationType) -> ComputationType:
         return (
             1 + error * self.a
             - (error * 2 * self.a - error ** 2 + 1) ** 0.5
