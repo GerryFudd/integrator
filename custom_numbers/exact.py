@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Dict, Tuple, List
+from typing import Dict, List
 
 from custom_numbers.types import Numeric
 from custom_numbers.utils import gcd
@@ -39,7 +39,7 @@ class RationalNumber:
         return RationalNumber.from_dec(Decimal(dec_str))
 
     @staticmethod
-    def resolve(x) -> RationalNumber:
+    def of(x: Numeric) -> RationalNumber:
         if isinstance(x, str):
             return RationalNumber.from_dec_str(x)
         if isinstance(x, RationalNumber):
@@ -66,13 +66,25 @@ class RationalNumber:
         self.numerator = numerator // c
         self.denominator = denominator // c
 
+    def to_decimal(self) -> Decimal:
+        return Decimal(self.numerator) / Decimal(self.denominator)
+
+    def to_float(self) -> float:
+        return self.numerator / self.denominator
+
+    def flip(self) -> RationalNumber:
+        return RationalNumber(
+            self.denominator,
+            self.numerator,
+        )
+
     def __str__(self):
         if self.denominator == 1:
             return str(self.numerator)
-        return str(self.numerator / self.denominator)
+        return str(self.to_decimal())
 
     def __add__(self, other):
-        summand = self.resolve(other)
+        summand = self.of(other)
         new_denominator = self.denominator * summand.denominator
         new_numerator = self.numerator * summand.denominator \
                         + summand.numerator * self.denominator
@@ -82,7 +94,7 @@ class RationalNumber:
         return self + other
 
     def __mul__(self, other):
-        multiplicand = self.resolve(other)
+        multiplicand = self.of(other)
         return RationalNumber(
             self.numerator * multiplicand.numerator,
             self.denominator * multiplicand.denominator,
@@ -92,7 +104,7 @@ class RationalNumber:
         return self * other
 
     def __pow__(self, power, modulo=None):
-        exponent = self.resolve(power)
+        exponent = self.of(power)
         if exponent.denominator == 1 and not modulo:
             if exponent.numerator < 0:
                 return RationalNumber(self.denominator, self.numerator) \
@@ -109,14 +121,8 @@ class RationalNumber:
     def __rsub__(self, other):
         return -self + other
 
-    def flip(self) -> RationalNumber:
-        return RationalNumber(
-            self.denominator,
-            self.numerator,
-        )
-
     def __truediv__(self, other):
-        return self * self.resolve(other).flip()
+        return self * self.of(other).flip()
 
     def __rtruediv__(self, other):
         return self.flip() * other
@@ -171,15 +177,12 @@ class RationalNumber:
             new_numerator += 1
         return RationalNumber(new_numerator, new_denominator)
 
-    def to_decimal(self) -> Decimal:
-        return Decimal(self.numerator) / Decimal(self.denominator)
-
 
 class PrimeFactorization:
     def __init__(self, factors: Dict[int, int]):
         self.factors = factors
 
-    def exact_root(self, n: int) -> Tuple[int, int]:
+    def exact_root(self, n: int) -> tuple[int, int]:
         if n < 1:
             raise NotImplementedError
         result = 1
@@ -225,12 +228,17 @@ def factor(n: int) -> PrimeFactorization:
 
 class RadicalTerm:
     @staticmethod
-    def of(
+    def of(x: Numeric):
+        return RadicalTerm(RationalNumber.of(x))
+
+    @staticmethod
+    def reduced(
         coefficient: Numeric,
         root: int = 1,
         content: RationalNumber = RationalNumber(1),
     ):
-        return RadicalTerm(RationalNumber.resolve(coefficient), root, content).__reduce()
+        return RadicalTerm(RationalNumber.of(coefficient), root, content)\
+            .__reduce()
 
     def __init__(
         self,
@@ -266,7 +274,7 @@ class RadicalTerm:
         self.content = content
 
     @staticmethod
-    def __rational_str(x: RationalNumber) -> Tuple[str, str]:
+    def __rational_str(x: RationalNumber) -> tuple[str, str]:
         denom_string = f'/{x.denominator}' \
             if x.denominator != 1 else ''
         return str(x.numerator), denom_string
@@ -301,10 +309,17 @@ class RadicalTerm:
             self.coefficient.flip(), self.root, self.content.flip(),
         )
 
-    def to_number(self) -> Decimal:
+    def to_decimal(self) -> Decimal:
         return self.content.to_decimal() \
                ** RationalNumber(1, self.root).to_decimal() \
                * self.coefficient.to_decimal()
+
+    def to_float(self) -> float:
+        n, d = (
+            self.content.to_decimal()
+            ** RationalNumber(1, self.root).to_decimal()
+        ).as_integer_ratio()
+        return self.coefficient.to_float() * n / d
 
     def __add__(self, other):
         if isinstance(other, RadicalTerm) \
@@ -375,7 +390,7 @@ class RadicalTerm:
         return self.flip() * other
 
     def __hash__(self):
-        return hash(self.to_number())
+        return hash(self.to_decimal())
 
     def __eq__(self, other):
         if isinstance(other, RadicalTerm):
@@ -391,8 +406,8 @@ class RadicalTerm:
 
     def __lt__(self, other):
         if isinstance(other, RadicalTerm):
-            return self < other.to_number()
-        return self.to_number() < other
+            return self < other.to_decimal()
+        return self.to_decimal() < other
 
     def __le__(self, other):
         return self == other or self < other
@@ -425,8 +440,14 @@ class ExactNumber:
             return
         self.radical_terms = list(radical_terms)
 
-    def to_number(self) -> Decimal:
-        return sum(map(lambda x: x.to_number(), self.radical_terms), Decimal(0))
+    def to_decimal(self) -> Decimal:
+        return sum(
+            map(lambda x: x.to_decimal(), self.radical_terms),
+            Decimal(0)
+        )
+
+    def to_float(self) -> Decimal:
+        return sum(map(lambda x: x.to_float(), self.radical_terms), 0.0)
 
     def __str__(self):
         return ' + '.join(map(str, self.radical_terms))
@@ -519,13 +540,13 @@ class ExactNumber:
 
     def __lt__(self, other):
         if isinstance(other, ExactNumber):
-            return self < other.to_number()
-        return self.to_number() < other
+            return self < other.to_decimal()
+        return self.to_decimal() < other
 
     def __le__(self, other):
         if isinstance(other, ExactNumber):
-            return self <= other.to_number()
-        return self.to_number() <= other
+            return self <= other.to_decimal()
+        return self.to_decimal() <= other
 
     def __gt__(self, other):
         return -self < -other

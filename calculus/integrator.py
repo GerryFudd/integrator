@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Callable
 
-from custom_numbers.computation import ComputationType
+from custom_numbers.types import ComputationType
 from custom_numbers.exact import ExactNumber
 from custom_numbers.utils import minimum, maximum
 from elementary_functions.polynomial import Polynomial

@@ -12,4 +12,4 @@ def test_unit_circle():
         decimal_val = (DecimalNumber.of(n) - 100) / 100
         expected = (1 - decimal_val ** 2) ** 0.5
         print(f'expected: {expected}')
-        assert round(actual.to_number(), 12) == round(expected, 12)
+        assert round(actual.to_decimal(), 12) == round(expected, 12)

@@ -1,7 +1,6 @@
-from custom_numbers.computation import ComputationType
 from elementary_functions.utils import FunctionSum, ConstantFunction, \
     CompositeFunction
-from custom_numbers.types import Numeric
+from custom_numbers.types import Numeric, ComputationType
 
 
 class PowerFunction:

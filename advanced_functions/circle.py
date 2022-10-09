@@ -1,8 +1,7 @@
-from custom_numbers.computation import ComputationType
 from elementary_functions.polynomial import Polynomial
 from elementary_functions.power import PowerFunction
 from elementary_functions.utils import ConstantFunction
-from custom_numbers.types import Numeric
+from custom_numbers.types import Numeric, ComputationType
 
 
 class Circle:

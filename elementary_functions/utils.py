@@ -1,8 +1,7 @@
 from abc import abstractmethod
 from typing import Protocol, List, runtime_checkable, Union
 
-from custom_numbers.computation import ComputationType
-from custom_numbers.types import Numeric
+from custom_numbers.types import Numeric, ComputationType
 
 
 @runtime_checkable

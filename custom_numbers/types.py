@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import runtime_checkable, Protocol
+from decimal import Decimal
+from typing import runtime_checkable, Protocol, TypeVar
 
 
 @runtime_checkable
@@ -73,3 +74,31 @@ class Numeric(Protocol):
     @abstractmethod
     def __abs__(self):
         raise NotImplementedError
+
+
+N = TypeVar('N')
+
+
+@runtime_checkable
+class ConvertableNumber(Protocol):
+    @abstractmethod
+    def of(self: N, x: Numeric) -> N:
+        raise NotImplementedError
+
+    @abstractmethod
+    def to_decimal(self) -> Decimal:
+        raise NotImplementedError
+
+    @abstractmethod
+    def to_float(self) -> float:
+        raise NotImplementedError
+
+
+@runtime_checkable
+class FlippableNumber(Protocol):
+    @abstractmethod
+    def flip(self: N) -> N:
+        raise NotImplementedError
+
+
+ComputationType = TypeVar('ComputationType')

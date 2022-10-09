@@ -1,10 +1,8 @@
 from __future__ import annotations
 from decimal import Decimal
 from math import inf, isinf
-from typing import TypeVar
 
-from custom_numbers.exact import ExactNumber, RationalNumber
-from custom_numbers.types import Numeric
+from custom_numbers.types import Numeric, ConvertableNumber, FlippableNumber
 
 
 class DecimalNumber:
@@ -33,7 +31,7 @@ class DecimalNumber:
             return DecimalNumber(Decimal(x))
         if isinstance(x, float):
             return DecimalNumber.of_float(x)
-        if isinstance(x, RationalNumber):
+        if isinstance(x, ConvertableNumber):
             return DecimalNumber(x.to_decimal())
 
     @staticmethod
@@ -64,7 +62,7 @@ class DecimalNumber:
             return DecimalNumber(inf_type=self.inf_type)
         if isinstance(other, DecimalNumber):
             return self + other.d
-        if isinstance(other, RationalNumber):
+        if isinstance(other, ConvertableNumber):
             return DecimalNumber(self.d + other.to_decimal())
         return DecimalNumber(self.d + other)
 
@@ -107,12 +105,12 @@ class DecimalNumber:
             if other.inf_type != 0:
                 return DecimalNumber.of(0)
             return DecimalNumber(self.d / other.d)
-        if isinstance(other, RationalNumber):
+        if isinstance(other, (ConvertableNumber, FlippableNumber)):
             return DecimalNumber(self.d * other.flip().to_decimal())
         return DecimalNumber(self.d / other)
 
     def __rtruediv__(self, other):
-        if isinstance(other, RationalNumber):
+        if isinstance(other, ConvertableNumber):
             return DecimalNumber(other.to_decimal() / self.d)
         return DecimalNumber.of(other) / self
 
@@ -144,7 +142,7 @@ class DecimalNumber:
             if other.inf_type != 0:
                 return other.inf_type > 0
             return self.d < other.d
-        if isinstance(other, RationalNumber):
+        if isinstance(other, ConvertableNumber):
             return self.d < other.to_decimal()
         return self.d < other
 
@@ -176,4 +174,3 @@ class DecimalNumber:
         return DecimalNumber(round(self.d, n))
 
 
-ComputationType = TypeVar('ComputationType', DecimalNumber, ExactNumber)
