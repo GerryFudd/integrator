@@ -1,5 +1,5 @@
 from advanced_functions.circle import Circle
-from general.numbers import Number
+from custom_numbers.computation import Number
 
 
 def test_unit_circle():

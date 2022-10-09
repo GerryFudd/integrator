@@ -2,7 +2,8 @@ from elementary_functions.polynomial import Polynomial
 from elementary_functions.power import PowerFunction
 
 
-from general.numbers import Numeric, Number
+from custom_numbers.computation import Number
+from custom_numbers.types import Numeric
 
 
 class EllipticFunction:

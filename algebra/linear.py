@@ -5,7 +5,7 @@ from algebra.expression import PolynomialExpression, SolutionType
 from algebra.solvable import Solvable, Condition, boundaries_linear, \
     solve_linear_inequality
 from general.interval import Interval
-from general.numbers import Numeric
+from custom_numbers.types import Numeric
 
 
 class LinearSolvable(Solvable[PolynomialExpression, SolutionType]):

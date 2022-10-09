@@ -8,7 +8,7 @@ from elementary_functions.polynomial import Polynomial
 from elementary_functions.power import PowerFunction
 from elementary_functions.simple import CharacteristicFunction, \
     SimpleFunction, Interval
-from general.numbers import RationalNumber
+from custom_numbers.computation import RationalNumber
 
 
 class TestIntegrator(TestCase):

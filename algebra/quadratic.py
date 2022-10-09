@@ -6,7 +6,9 @@ from algebra.expression import PolynomialExpression, SolutionType
 from algebra.solvable import Solvable, boundaries_linear, Condition, \
     solve_linear_inequality
 from general.interval import Interval
-from general.numbers import Numeric, minimum, maximum, Number
+from custom_numbers.computation import Number
+from custom_numbers.types import Numeric
+from custom_numbers.utils import minimum, maximum
 
 
 class QuadraticSolvable(Solvable[PolynomialExpression, SolutionType]):

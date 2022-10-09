@@ -1,6 +1,9 @@
 from decimal import Decimal
 
-from general.numbers import RationalNumber, Numeric, newton_int_sqrt
+from custom_numbers.exact import RadicalTerm
+from custom_numbers.computation import RationalNumber
+from custom_numbers.utils import newton_int_sqrt
+from custom_numbers.types import Numeric
 
 
 def test_rational_number_from_int():
@@ -149,3 +152,59 @@ def test_int_sqrt_closest_int():
 #            round(Decimal(2) ** Decimal('0.5'), tolerance)
 #     assert round(RationalNumber(3, 2) ** 0.5, tolerance) == \
 #            round(Decimal('1.5') ** Decimal('0.5'), tolerance)
+
+def test_radical_term_constructor():
+    assert RadicalTerm(RationalNumber(5)) == RadicalTerm(
+        RationalNumber(5),
+        1, RationalNumber(1)
+    )
+    assert RadicalTerm(RationalNumber(2), 1, RationalNumber(3)) == RadicalTerm(
+        RationalNumber(6),
+    )
+    assert RadicalTerm(RationalNumber(2), 3, RationalNumber(-3)) == RadicalTerm(
+        RationalNumber(-2),
+        3, RationalNumber(3)
+    )
+    assert RadicalTerm(RationalNumber(5), 17, RationalNumber(0)) == \
+           RadicalTerm(RationalNumber(0))
+
+
+def test_radical_term_sum():
+    a = RadicalTerm(RationalNumber(7), 2, RationalNumber(5))
+    b = RadicalTerm(RationalNumber(4), 2, RationalNumber(5))
+    assert a + b == RadicalTerm(RationalNumber(11), 2, RationalNumber(5))
+
+
+def test_radical_term_prod():
+    a = RadicalTerm(RationalNumber(7), 6, RationalNumber(3))
+    b = RadicalTerm(RationalNumber(4), 10, RationalNumber(4))
+    assert a * b == RadicalTerm(
+        RationalNumber(28),
+        30,
+        RationalNumber(3 ** 5 * 4 ** 3)
+    )
+
+
+def test_radical_term_eq_rational():
+    assert RadicalTerm(RationalNumber(3, 7), 2, RationalNumber(4)) != \
+        RationalNumber(6, 7)
+    assert RadicalTerm(RationalNumber(6, 7)) == RationalNumber(6, 7)
+
+
+def test_radical_term_reduce():
+    assert RadicalTerm.of(RationalNumber(3, 7), 2, RationalNumber(4)) == \
+        RationalNumber(6, 7)
+    assert RadicalTerm.of(RationalNumber(3, 7), 2, RationalNumber(8, 9)) == \
+        RadicalTerm(RationalNumber(6, 21), 2, RationalNumber(2))
+    assert RadicalTerm.of(RationalNumber(1), 2, RationalNumber(
+        23**2*29**3*101, 24
+    )) == RadicalTerm(RationalNumber(23*29, 2), 2, RationalNumber(29*101, 6))
+
+
+def test_radical_term_pow():
+    a = RadicalTerm(RationalNumber(7, 5), 3, RationalNumber(25, 49))
+    assert a ** 3 == RationalNumber(7, 5)
+    b = RadicalTerm(RationalNumber(10, 17), 2, RationalNumber(17*61, 65))
+    assert b ** 3 == RadicalTerm(
+        RationalNumber(2**3*5**2*61, 13*17**2), 2, RationalNumber(17*61, 65)
+    )

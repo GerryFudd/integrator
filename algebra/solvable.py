@@ -6,7 +6,7 @@ from typing import Generic, List
 from algebra.expression import ExpressionType, PolynomialExpression, \
     SolutionType
 from elementary_functions.simple import Interval
-from general.numbers import Numeric
+from custom_numbers.types import Numeric
 
 
 class Condition(Generic[SolutionType]):

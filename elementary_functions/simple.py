@@ -5,7 +5,7 @@ from typing import List
 
 from elementary_functions.utils import FunctionSum, ConstantFunction
 from general.interval import Interval
-from general.numbers import Numeric
+from custom_numbers.types import Numeric
 
 
 class CharacteristicFunction:

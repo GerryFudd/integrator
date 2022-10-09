@@ -7,7 +7,8 @@ from elementary_functions.power import PowerFunction
 from elementary_functions.simple import CharacteristicFunction, Interval, \
     SimpleFunction
 from elementary_functions.utils import FunctionSum
-from general.numbers import Numeric, Number, RationalNumber
+from custom_numbers.computation import Number, RationalNumber
+from custom_numbers.types import Numeric
 from .utils import get_local_extrema, output_range
 
 

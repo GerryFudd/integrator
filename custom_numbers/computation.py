@@ -1,119 +1,10 @@
 from __future__ import annotations
-from abc import abstractmethod
 from decimal import Decimal
 from math import inf, isinf
-from typing import runtime_checkable, Protocol, Callable, TypeVar
+from typing import Callable, TypeVar
 
-
-def minimum(a, b):
-    if a <= b:
-        return a
-    return b
-
-
-def maximum(a, b):
-    if a >= b:
-        return a
-    return b
-
-
-@runtime_checkable
-class Numeric(Protocol):
-    @abstractmethod
-    def __str__(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def __add__(self, other):
-        raise NotImplementedError
-
-    @abstractmethod
-    def __mul__(self, other):
-        raise NotImplementedError
-
-    @abstractmethod
-    def __rmul__(self, other):
-        raise NotImplementedError
-
-    @abstractmethod
-    def __pow__(self, power, modulo=None):
-        raise NotImplementedError
-
-    @abstractmethod
-    def __sub__(self, other):
-        raise NotImplementedError
-
-    @abstractmethod
-    def __truediv__(self, other):
-        raise NotImplementedError
-
-    @abstractmethod
-    def __rtruediv__(self, other):
-        raise NotImplementedError
-
-    @abstractmethod
-    def __eq__(self, other):
-        raise NotImplementedError
-
-    @abstractmethod
-    def __ne__(self, other):
-        raise NotImplementedError
-
-    @abstractmethod
-    def __lt__(self, other):
-        raise NotImplementedError
-
-    @abstractmethod
-    def __le__(self, other):
-        raise NotImplementedError
-
-    @abstractmethod
-    def __gt__(self, other):
-        raise NotImplementedError
-
-    @abstractmethod
-    def __ge__(self, other):
-        raise NotImplementedError
-
-    @abstractmethod
-    def __neg__(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def __abs__(self):
-        raise NotImplementedError
-
-
-def gcd(a: int, b: int):
-    if a < 0 or b < 0:
-        return gcd(abs(a), abs(b))
-    if a == 0:
-        return b
-    if b == 0:
-        return a
-
-    n = maximum(a, b)
-    m = minimum(a, b)
-
-    return gcd(m, n % m)
-
-
-# b=(a+x//a)//2
-# x=2,1,1
-# x=3,2,1,2
-# x=43,22,11,7,6,6
-def newton_int_sqrt(x: int) -> int:
-    if x == 0:
-        return 0
-    if x < 0:
-        raise NotImplementedError
-    candidate = x
-
-    while True:
-        next_candidate = (candidate + x // candidate) // 2
-        if abs(candidate - next_candidate) <= 1:
-            return next_candidate
-        candidate = next_candidate
+from custom_numbers.types import Numeric
+from custom_numbers.utils import gcd
 
 
 rational_tol = 1000000000000000
@@ -218,11 +109,17 @@ class RationalNumber:
     def __rsub__(self, other):
         return -self + other
 
+    def flip(self) -> RationalNumber:
+        return RationalNumber(
+            self.denominator,
+            self.numerator,
+        )
+
     def __truediv__(self, other):
-        return self * (self.resolve(other) ** -1)
+        return self * self.resolve(other).flip()
 
     def __rtruediv__(self, other):
-        return (self ** -1) * other
+        return self.flip() * other
 
     def __repr__(self):
         return f'RationalNumber(numerator={self.numerator}, denominator=' \
@@ -258,7 +155,7 @@ class RationalNumber:
         return not (self < other)
 
     def __neg__(self):
-        return RationalNumber(-1 * self.numerator, self.denominator)
+        return RationalNumber(-self.numerator, self.denominator)
 
     def __abs__(self):
         if self.numerator >= 0:
@@ -278,16 +175,8 @@ class RationalNumber:
         return Decimal(self.numerator) / Decimal(self.denominator)
 
 
-def resolve(string: str):
-    if string == '-inf':
-        return -inf
-    if string == 'inf':
-        return inf
-    else:
-        return RationalNumber.resolve(string)
-
-
 T = TypeVar('T', Decimal, RationalNumber)
+
 
 class Number:
     @staticmethod

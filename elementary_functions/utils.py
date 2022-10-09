@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from typing import Protocol, List, runtime_checkable
-from general.numbers import Numeric
+from custom_numbers.types import Numeric
 
 
 @runtime_checkable

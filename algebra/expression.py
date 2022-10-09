@@ -1,6 +1,7 @@
 from typing import TypeVar
 
-from general.numbers import Numeric, Number
+from custom_numbers.computation import Number
+from custom_numbers.types import Numeric
 from general.vector import Vector
 
 

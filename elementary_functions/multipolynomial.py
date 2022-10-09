@@ -1,4 +1,4 @@
-from general.numbers import maximum
+from custom_numbers.utils import maximum
 from general.table import IterableTable
 
 

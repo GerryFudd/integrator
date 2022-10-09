@@ -1,10 +1,10 @@
 from typing import List
 
-from calculus.utils import maximum
+from custom_numbers.utils import maximum
 from elementary_functions.utils import FunctionSum, Function, ConstantFunction, \
     CompositeFunction
 from elementary_functions.power import PowerFunction
-from general.numbers import Numeric
+from custom_numbers.types import Numeric
 
 
 class Polynomial:

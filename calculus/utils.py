@@ -1,4 +1,5 @@
-from general.numbers import minimum, maximum, Number
+from custom_numbers.computation import Number
+from custom_numbers.utils import minimum, maximum
 
 
 def output_range(func, lower, upper, resolution=100):

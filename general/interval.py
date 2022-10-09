@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from general.numbers import maximum, minimum, Numeric, Number
+from custom_numbers.computation import Number
+from custom_numbers.types import Numeric
+from custom_numbers.utils import minimum, maximum
 
 
 class Interval:
