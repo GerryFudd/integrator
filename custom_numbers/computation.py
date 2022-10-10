@@ -1,8 +1,10 @@
 from __future__ import annotations
+
 from decimal import Decimal
 from math import inf, isinf
+from typing import Callable
 
-from custom_numbers.types import Numeric, Convertable, FlippableNumber
+from custom_numbers.types import Numeric, Convertable
 
 
 class DecimalNumber(Convertable):
@@ -58,36 +60,58 @@ class DecimalNumber(Convertable):
         return f'Number(d={self.d},inf_type={self.inf_type})'
 
     def to_decimal(self) -> Decimal:
+        if self.inf_type != 0:
+            return NotImplemented
         return self.d
 
-    def to_float(self) -> float:
-        n, d = self.d.as_integer_ratio()
-        return n / d
+    @staticmethod
+    def do_for_builtins(
+        other,
+        action: Callable[[int | Decimal], DecimalNumber],
+        or_else: Callable[[], any]
+    ):
+        if isinstance(other, int) or isinstance(other, Decimal):
+            return action(other)
+        if isinstance(other, float):
+            return action(DecimalNumber.float_to_dec(other))
+        return or_else()
 
     def __add__(self, other):
         if self.inf_type != 0:
             return DecimalNumber(inf_type=self.inf_type)
         if isinstance(other, DecimalNumber):
-            return self + other.d
-        if isinstance(other, Convertable):
-            return DecimalNumber(self.d + other.to_decimal())
-        return DecimalNumber(self.d + other)
+            if other.inf_type != 0:
+                return DecimalNumber(inf_type=other.inf_type)
+            return DecimalNumber(self.d + other.d)
+        return self.do_for_builtins(
+            other,
+            lambda x: DecimalNumber(self.d + x),
+            lambda: other.__radd__(self)
+        )
 
     def __radd__(self, other):
         return self + other
 
     def __mul__(self, other):
+        if isinstance(other, DecimalNumber):
+            if self.inf_type != 0:
+                if other.inf_type != 0:
+                    return DecimalNumber(
+                        inf_type=self.inf_type * other.inf_type
+                    )
+                return DecimalNumber(other.d, self.inf_type * other.inf_type)
+            return DecimalNumber(self.d * other.d)
         if self.inf_type != 0:
             if other == 0:
                 return DecimalNumber(Decimal(0))
             if other < 0:
                 return DecimalNumber(inf_type=-self.inf_type)
             return DecimalNumber(inf_type=self.inf_type)
-        if isinstance(other, DecimalNumber):
-            return DecimalNumber(self.d * other.d)
-        if isinstance(other, Numeric):
-            return self * self.of(other)
-        return other.__rmul__(self)
+        return self.do_for_builtins(
+            other,
+            lambda x: DecimalNumber(self.d * x),
+            lambda: other.__rmul__(self)
+        )
 
     def __rmul__(self, other):
         return self * other
@@ -97,42 +121,52 @@ class DecimalNumber(Convertable):
             raise NotImplementedError
         if isinstance(power, DecimalNumber):
             return DecimalNumber(pow(self.d, power.d, modulo))
-        return pow(self, self.of(power), modulo)
+        return self.do_for_builtins(
+            power,
+            lambda x: DecimalNumber(pow(self.d, x, modulo)),
+            lambda _: NotImplemented
+        )
 
     def __sub__(self, other):
         return self + -other
 
     def __rsub__(self, other):
-        return -(self + -other)
+        return -self + other
 
     def __truediv__(self, other):
         if self.inf_type != 0:
-            return DecimalNumber(None, self.inf_type)
+            return self
         if isinstance(other, DecimalNumber):
             if other.inf_type != 0:
-                return self.of(0)
+                return DecimalNumber.of(0)
             return DecimalNumber(self.d / other.d)
-        if isinstance(other, FlippableNumber):
-            return DecimalNumber(self.d * other.flip().to_decimal())
-        return DecimalNumber(self.d / other)
+        return self.do_for_builtins(
+            other,
+            lambda x: DecimalNumber(self.d / x),
+            lambda _: other.__rtruediv__(self)
+        )
 
     def __rtruediv__(self, other):
-        if isinstance(other, Convertable):
-            return DecimalNumber(other.to_decimal() / self.d)
-        return self.of(other) / self
+        if self.inf_type != 0:
+            return DecimalNumber.of(0)
+        return self.do_for_builtins(
+            other,
+            lambda x: DecimalNumber(x / self.d),
+            lambda _: other.__truediv__(self)
+        )
 
     def __eq__(self, other):
         if isinstance(other, DecimalNumber):
-            return other == self.d
+            if self.inf_type * other.inf_type < 0:
+                return False
+            return self.d == other.d
+
         if self.inf_type != 0:
-            if isinstance(other, DecimalNumber):
-                return self.inf_type * other.inf_type > 0
             if isinstance(other, float) and isinf(other):
                 return self.inf_type < 0 and other < 0 \
-                    or self.inf_type > 0 and other > 0
+                       or self.inf_type > 0 and other > 0
             return False
-
-        return self.d == other
+        return other == self.d
 
     def __hash__(self):
         if self.inf_type != 0:

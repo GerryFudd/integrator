@@ -10,7 +10,9 @@ from custom_numbers.utils import gcd
 
 
 class ExactNumber(ConvertableNumberABC, ABC):
-    pass
+    @staticmethod
+    def of(x: Numeric) -> ExactNumber:
+        return RadicalSum.of(x)
 
 
 class ExactZero(ExactNumber):
@@ -141,9 +143,6 @@ class RationalNumber(ExactNumber):
 
     def to_decimal(self) -> Decimal:
         return Decimal(self.numerator) / Decimal(self.denominator)
-
-    def to_float(self) -> float:
-        return self.numerator / self.denominator
 
     def flip(self) -> RationalNumber:
         return RationalNumber(
@@ -306,7 +305,7 @@ class RadicalTerm(ExactNumber):
     content: ExactNumber
 
     @staticmethod
-    def of(x: Numeric):
+    def of(x: Numeric) -> RadicalTerm:
         if isinstance(x, RadicalTerm):
             return x
         return RadicalTerm(RationalNumber.of(x))
@@ -546,18 +545,22 @@ class RadicalSum(ExactNumber):
     def __add__(self, other):
         if isinstance(other, RadicalTerm):
             result_terms = []
+            other_used = False
             for radical_term in self.radical_terms:
-                if radical_term.root == other.root \
+                if not other_used and radical_term.root == other.root \
                         and radical_term.content == other.content:
                     t = RadicalTerm(
                         radical_term.coefficient + other.coefficient,
                         radical_term.root,
                         radical_term.content,
                     )
-                    if t.coefficient != ExactZero():
+                    other_used = True
+                    if ExactZero() != t.coefficient:
                         result_terms.append(t)
                     continue
                 result_terms.append(radical_term)
+            if not other_used:
+                result_terms.append(other)
             return RadicalSum(*result_terms)
         if isinstance(other, RadicalSum):
             return sum(other.radical_terms, self)
