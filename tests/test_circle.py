@@ -1,12 +1,12 @@
 from advanced_functions.circle import Circle
 from custom_numbers.computation import DecimalNumber
-from custom_numbers.exact import ExactNumber
+from custom_numbers.exact import ExactNumber, RadicalSum
 
 
 def test_unit_circle():
     circ = Circle(0, 0, 1)
     for n in range(201):
-        exact_val: ExactNumber = (ExactNumber.of(n) - 100) / 100
+        exact_val: ExactNumber = (RadicalSum.of(n) - 100) / 100
         actual: ExactNumber = circ.evaluate(exact_val)
         print(f'actual: {actual}')
         decimal_val = (DecimalNumber.of(n) - 100) / 100

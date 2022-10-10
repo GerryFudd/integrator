@@ -4,7 +4,7 @@ from algebra.solvable import Condition
 from algebra.linear import LinearEquation, LinearInequality
 from algebra.quadratic import QuadraticEquation, QuadraticInequality
 from algebra.expression import PolynomialExpression
-from custom_numbers.exact import ExactNumber
+from custom_numbers.exact import ExactNumber, RadicalSum
 from general.interval import Interval
 
 
@@ -63,8 +63,8 @@ def test_solve_linear_with_cancellation():
 
 def test_solve_quadratic_simple():
     assert QuadraticEquation(
-        PolynomialExpression(-1, 0, 1).to_type(ExactNumber.of),
-        PolynomialExpression(0, 0, 0).to_type(ExactNumber.of)
+        PolynomialExpression(-1, 0, 1).to_type(RadicalSum.of),
+        PolynomialExpression(0, 0, 0).to_type(RadicalSum.of)
     ).solve() == [-1, 1]
 
 

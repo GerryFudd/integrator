@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Callable
 
 from custom_numbers.types import ComputationType
-from custom_numbers.exact import ExactNumber
+from custom_numbers.exact import ExactNumber, RadicalSum
 from custom_numbers.utils import minimum, maximum
 from elementary_functions.polynomial import Polynomial
 from elementary_functions.power import PowerFunction
@@ -152,13 +152,13 @@ class Integrator:
 
 
 def integrate_exact(func, a, b):
-    exact_a = ExactNumber.of(a)
-    exact_b = ExactNumber.of(b)
+    exact_a = RadicalSum.of(a)
+    exact_b = RadicalSum.of(b)
     if isinstance(func, PowerFunction):
         new_power = func.power + 1
         anti_derivative = PowerFunction(
             new_power,
-            ExactNumber.of(func.coefficient) / new_power
+            RadicalSum.of(func.coefficient) / new_power
         )
         return anti_derivative.evaluate(exact_b) \
             - anti_derivative.evaluate(exact_a)

@@ -182,24 +182,24 @@ def test_radical_term_prod():
 
 def test_radical_term_eq_rational():
     assert RadicalTerm(RationalNumber(3, 7), 2, RationalNumber(4)) != \
-        RationalNumber(6, 7)
+           RationalNumber(6, 7)
     assert RadicalTerm(RationalNumber(6, 7)) == RationalNumber(6, 7)
 
 
 def test_radical_term_reduce():
     assert RadicalTerm.reduced(RationalNumber(3, 7), 2, RationalNumber(4)) == \
-        RationalNumber(6, 7)
+           RationalNumber(6, 7)
     assert RadicalTerm.reduced(RationalNumber(3, 7), 2, RationalNumber(8, 9)) == \
-        RadicalTerm(RationalNumber(6, 21), 2, RationalNumber(2))
+           RadicalTerm(RationalNumber(6, 21), 2, RationalNumber(2))
     assert RadicalTerm.reduced(1, 2, RationalNumber(
         23**2*29**3*101, 24
-    )) == RadicalTerm(RationalNumber(23*29, 2), 2, RationalNumber(29*101, 6))
+    )) == RadicalTerm(RationalNumber(23 * 29, 2), 2, RationalNumber(29 * 101, 6))
 
 
 def test_radical_term_pow():
     a = RadicalTerm(RationalNumber(7, 5), 3, RationalNumber(25, 49))
     assert a ** 3 == RationalNumber(7, 5)
-    b = RadicalTerm(RationalNumber(10, 17), 2, RationalNumber(17*61, 65))
+    b = RadicalTerm(RationalNumber(10, 17), 2, RationalNumber(17 * 61, 65))
     assert b ** 3 == RadicalTerm(
         RationalNumber(2**3*5**2*61, 13*17**2), 2, RationalNumber(17*61, 65)
     )

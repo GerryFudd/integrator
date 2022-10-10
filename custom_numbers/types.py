@@ -1,104 +1,193 @@
 from __future__ import annotations
 
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from decimal import Decimal
-from typing import runtime_checkable, Protocol, TypeVar
+from typing import TypeVar, Protocol, runtime_checkable
 
 
 @runtime_checkable
 class Numeric(Protocol):
     @abstractmethod
     def __str__(self):
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def __add__(self, other):
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def __radd__(self, other):
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def __mul__(self, other):
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def __rmul__(self, other):
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def __pow__(self, power, modulo=None):
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def __sub__(self, other):
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def __truediv__(self, other):
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def __rtruediv__(self, other):
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def __eq__(self, other):
-        raise NotImplementedError
+        pass
+
+    @abstractmethod
+    def __hash__(self):
+        pass
 
     @abstractmethod
     def __ne__(self, other):
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def __lt__(self, other):
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def __le__(self, other):
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def __gt__(self, other):
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def __ge__(self, other):
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def __neg__(self):
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def __abs__(self):
-        raise NotImplementedError
-
-
-N = TypeVar('N')
+        pass
 
 
 @runtime_checkable
-class ConvertableNumber(Protocol):
+class Convertable(Protocol):
+    @staticmethod
     @abstractmethod
-    def of(self: N, x: Numeric) -> N:
-        raise NotImplementedError
+    def of(x: Numeric) -> N:
+        """Create a class instance from a numeric"""
 
     @abstractmethod
     def to_decimal(self) -> Decimal:
-        raise NotImplementedError
-
-    @abstractmethod
-    def to_float(self) -> float:
-        raise NotImplementedError
+        """Converts this numeric class to a decimal"""
 
 
 @runtime_checkable
 class FlippableNumber(Protocol):
     @abstractmethod
     def flip(self: N) -> N:
-        raise NotImplementedError
+        """
+        This is applicable for ratios where self ** -1 may be constructed
+        exactly.
+        """
 
 
-ComputationType = TypeVar('ComputationType')
+class NumericABC(ABC):
+    @abstractmethod
+    def __str__(self):
+        pass
+
+    @abstractmethod
+    def __add__(self, other):
+        pass
+
+    @abstractmethod
+    def __radd__(self, other):
+        pass
+
+    @abstractmethod
+    def __mul__(self, other):
+        pass
+
+    @abstractmethod
+    def __rmul__(self, other):
+        pass
+
+    @abstractmethod
+    def __pow__(self, power, modulo=None):
+        pass
+
+    @abstractmethod
+    def __sub__(self, other):
+        pass
+
+    @abstractmethod
+    def __truediv__(self, other):
+        pass
+
+    @abstractmethod
+    def __rtruediv__(self, other):
+        pass
+
+    @abstractmethod
+    def __eq__(self, other):
+        pass
+
+    @abstractmethod
+    def __hash__(self):
+        pass
+
+    @abstractmethod
+    def __ne__(self, other):
+        pass
+
+    @abstractmethod
+    def __lt__(self, other):
+        pass
+
+    @abstractmethod
+    def __le__(self, other):
+        pass
+
+    @abstractmethod
+    def __gt__(self, other):
+        pass
+
+    @abstractmethod
+    def __ge__(self, other):
+        pass
+
+    @abstractmethod
+    def __neg__(self):
+        pass
+
+    @abstractmethod
+    def __abs__(self):
+        pass
+
+
+class ConvertableNumberABC(NumericABC):
+    @staticmethod
+    @abstractmethod
+    def of(x: Numeric) -> N:
+        """Create a class instance from a numeric"""
+
+    @abstractmethod
+    def to_decimal(self) -> Decimal:
+        """Converts this numeric class to a decimal"""
+
+
+ComputationType = TypeVar('ComputationType', bound=Convertable)
+
+
+N = TypeVar('N', bound=Convertable)

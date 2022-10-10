@@ -2,10 +2,23 @@ from __future__ import annotations
 from decimal import Decimal
 from math import inf, isinf
 
-from custom_numbers.types import Numeric, ConvertableNumber, FlippableNumber
+from custom_numbers.types import Numeric, Convertable, FlippableNumber
 
 
-class DecimalNumber:
+class DecimalNumber(Convertable):
+    @staticmethod
+    def of(x: Numeric) -> DecimalNumber:
+        if isinstance(x, Decimal):
+            return DecimalNumber(x)
+        if isinstance(x, DecimalNumber):
+            return DecimalNumber(x.d, x.inf_type)
+        if isinstance(x, int):
+            return DecimalNumber(Decimal(x))
+        if isinstance(x, float):
+            return DecimalNumber.of_float(x)
+        if isinstance(x, Convertable):
+            return DecimalNumber(x.to_decimal())
+
     @staticmethod
     def float_to_dec(f: float):
         if isinf(f):
@@ -20,19 +33,6 @@ class DecimalNumber:
                 return DecimalNumber(inf_type=-1)
             return DecimalNumber(inf_type=1)
         return DecimalNumber(Decimal(str(f)))
-
-    @staticmethod
-    def of(x: Numeric):
-        if isinstance(x, Decimal):
-            return DecimalNumber(x)
-        if isinstance(x, DecimalNumber):
-            return DecimalNumber(x.d, x.inf_type)
-        if isinstance(x, int):
-            return DecimalNumber(Decimal(x))
-        if isinstance(x, float):
-            return DecimalNumber.of_float(x)
-        if isinstance(x, ConvertableNumber):
-            return DecimalNumber(x.to_decimal())
 
     @staticmethod
     def parse(s: str):
@@ -57,12 +57,19 @@ class DecimalNumber:
     def __repr__(self):
         return f'Number(d={self.d},inf_type={self.inf_type})'
 
+    def to_decimal(self) -> Decimal:
+        return self.d
+
+    def to_float(self) -> float:
+        n, d = self.d.as_integer_ratio()
+        return n / d
+
     def __add__(self, other):
         if self.inf_type != 0:
             return DecimalNumber(inf_type=self.inf_type)
         if isinstance(other, DecimalNumber):
             return self + other.d
-        if isinstance(other, ConvertableNumber):
+        if isinstance(other, Convertable):
             return DecimalNumber(self.d + other.to_decimal())
         return DecimalNumber(self.d + other)
 
@@ -79,7 +86,7 @@ class DecimalNumber:
         if isinstance(other, DecimalNumber):
             return DecimalNumber(self.d * other.d)
         if isinstance(other, Numeric):
-            return self * DecimalNumber.of(other)
+            return self * self.of(other)
         return other.__rmul__(self)
 
     def __rmul__(self, other):
@@ -90,7 +97,7 @@ class DecimalNumber:
             raise NotImplementedError
         if isinstance(power, DecimalNumber):
             return DecimalNumber(pow(self.d, power.d, modulo))
-        return pow(self, DecimalNumber.of(power), modulo)
+        return pow(self, self.of(power), modulo)
 
     def __sub__(self, other):
         return self + -other
@@ -103,16 +110,16 @@ class DecimalNumber:
             return DecimalNumber(None, self.inf_type)
         if isinstance(other, DecimalNumber):
             if other.inf_type != 0:
-                return DecimalNumber.of(0)
+                return self.of(0)
             return DecimalNumber(self.d / other.d)
-        if isinstance(other, (ConvertableNumber, FlippableNumber)):
+        if isinstance(other, FlippableNumber):
             return DecimalNumber(self.d * other.flip().to_decimal())
         return DecimalNumber(self.d / other)
 
     def __rtruediv__(self, other):
-        if isinstance(other, ConvertableNumber):
+        if isinstance(other, Convertable):
             return DecimalNumber(other.to_decimal() / self.d)
-        return DecimalNumber.of(other) / self
+        return self.of(other) / self
 
     def __eq__(self, other):
         if isinstance(other, DecimalNumber):
@@ -142,7 +149,7 @@ class DecimalNumber:
             if other.inf_type != 0:
                 return other.inf_type > 0
             return self.d < other.d
-        if isinstance(other, ConvertableNumber):
+        if isinstance(other, Convertable):
             return self.d < other.to_decimal()
         return self.d < other
 
@@ -172,5 +179,3 @@ class DecimalNumber:
             return self
         # noinspection PyTypeChecker
         return DecimalNumber(round(self.d, n))
-
-
