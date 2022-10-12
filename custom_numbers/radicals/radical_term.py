@@ -2,13 +2,15 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from custom_numbers.exact import RationalNumber, ExactNumber
+from custom_numbers.exact.rational_number import RationalNumber
+from custom_numbers.exact.types import ExactNumber
+from custom_numbers.exact.utils import BaseExactNumber
 from custom_numbers.radicals.factoring import factor
 from custom_numbers.types import Numeric, FlippableNumber, Convertable
 from custom_numbers.utils import gcd, maximum
 
 
-class RadicalTerm(ExactNumber):
+class RadicalTerm(BaseExactNumber):
     coefficient: RationalNumber
     power: int
     content: ExactNumber

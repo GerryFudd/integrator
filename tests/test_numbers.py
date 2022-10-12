@@ -1,6 +1,7 @@
 from decimal import Decimal
 
-from custom_numbers.exact import RationalNumber
+from custom_numbers.exact.factory import to_exact
+from custom_numbers.exact.rational_number import RationalNumber
 from custom_numbers.radicals.radical_sum import RadicalSum
 from custom_numbers.radicals.radical_term import RadicalTerm
 from custom_numbers.utils import newton_int_sqrt
@@ -222,8 +223,8 @@ def test_radical_term_pow():
 
 
 def test_exact_constructor():
-    assert isinstance(RadicalSum.of(1), RadicalSum)
-    assert isinstance(RadicalSum.of(1.25), RadicalSum)
+    assert isinstance(to_exact(1), RadicalSum)
+    assert isinstance(to_exact(1.25), RadicalSum)
     assert isinstance(RadicalSum(
         RadicalTerm.reduced(3, 2, RationalNumber(5)),
         RadicalTerm.of(7),

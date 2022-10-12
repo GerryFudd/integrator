@@ -3,14 +3,15 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import List
 
-from custom_numbers.exact import RationalNumber, ExactNumber
+from custom_numbers.exact.rational_number import RationalNumber
+from custom_numbers.exact.utils import BaseExactNumber
 from custom_numbers.radicals.radical_term import RadicalTerm
 from custom_numbers.types import Numeric, FlippableNumber, \
     Convertable
 from custom_numbers.utils import lcm
 
 
-class RadicalSum(ExactNumber):
+class RadicalSum(BaseExactNumber):
     @staticmethod
     def of(x: Numeric):
         if isinstance(x, RadicalSum):
