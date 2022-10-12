@@ -123,8 +123,8 @@ class DecimalNumber(Convertable):
             return DecimalNumber(pow(self.d, power.d, modulo))
         return self.do_for_builtins(
             power,
-            lambda x: DecimalNumber(pow(self.d, x, modulo)),
-            lambda _: NotImplemented
+            lambda x: DecimalNumber(pow(self.d, Decimal(x), modulo)),
+            lambda: NotImplemented
         )
 
     def __sub__(self, other):

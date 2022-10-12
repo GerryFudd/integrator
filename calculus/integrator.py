@@ -18,9 +18,9 @@ class Mode(Enum):
 
 
 class IntegrationResult:
-    def __init__(self, min, max, trap) -> None:
-        self.min = min
-        self.max = max
+    def __init__(self, min_x, max_x, trap) -> None:
+        self.min = min_x
+        self.max = max_x
         self.trap = trap
 
 

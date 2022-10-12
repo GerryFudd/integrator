@@ -3,7 +3,7 @@ from custom_numbers.exact.rational_number import RationalNumber
 from elementary_functions.polynomial import Polynomial
 from elementary_functions.power import PowerFunction
 from elementary_functions.simple import CharacteristicFunction, SimpleFunction
-from elementary_functions.utils import ConstantFunction
+from elementary_functions.calculus_utils import ConstantFunction
 from general.interval import Interval
 
 

@@ -1,42 +1,35 @@
 from typing import List
 
+from custom_numbers.types import Numeric
 from custom_numbers.utils import maximum
-from elementary_functions.utils import FunctionSum, Function, ConstantFunction, \
-    CompositeFunction
+from elementary_functions.calculus_utils import ConstantFunction, \
+    DifferentiableSum, DifferentiableFunction
 from elementary_functions.power import PowerFunction
-from custom_numbers.types import Numeric, ComputationType
+from elementary_functions.utils import FunctionSum, CompositeFunction
 
 
-class Polynomial:
+class Polynomial(DifferentiableSum):
+    constituents: List[PowerFunction]
+
     def __init__(self, *coefficients: Numeric):
         self.coefficients = list(coefficients)
-        func = FunctionSum()
-        for power, coefficient in enumerate(self.coefficients):
-            if not coefficient == 0:
-                func += PowerFunction(power, coefficient)
-        self.func = func
+        DifferentiableSum.__init__(self, *filter(
+            lambda x: x.coefficient != 0,
+            map(
+                lambda x: PowerFunction(x[0], x[1]),
+                enumerate(self.coefficients),
+            )
+        ))
 
     def __eq__(self, other):
-        if isinstance(other, ConstantFunction):
-            return self.coefficients == [other.val]
-        if isinstance(other, PowerFunction):
-            return other.power == len(self.coefficients) - 1 \
-                   and isinstance(other.power, int) \
-                   and self.coefficients[:-1] == [0] * other.power \
-                   and self.coefficients[other.power] == other.coefficient
         if isinstance(other, FunctionSum):
-            return other == self
-        if not isinstance(other, Polynomial):
-            return False
-        return self.coefficients == other.coefficients
+            return set(self.constituents) == set(other.constituents)
+        return len(self.constituents) == 1 and self.constituents[0] == other
 
     def __req__(self, other):
         if isinstance(other, PowerFunction):
             return self == other
         raise NotImplementedError
-
-    def __str__(self):
-        return str(self.func)
 
     def __repr__(self):
         return f'Polynomial(coefficients={self.coefficients})'
@@ -44,7 +37,7 @@ class Polynomial:
     def __reduce(self):
         while self.coefficients[-1] == 0:
             self.coefficients.pop()
-        return self
+        return Polynomial(*self.coefficients)
 
     def __rmul__(self, other):
         return Polynomial(*map(lambda x: other * x, self.coefficients))
@@ -95,9 +88,8 @@ class Polynomial:
             return result
         return CompositeFunction(self, other)
 
-    @property
-    def constituents(self) -> List[Function]:
-        return self.func.constituents
-
-    def evaluate(self, x: ComputationType) -> ComputationType:
-        return self.func.evaluate(x)
+    def differentiate(self) -> DifferentiableFunction:
+        return Polynomial(*map(
+            lambda x: (x[0] + 1) * x[1],
+            enumerate(self.coefficients[1:])
+        ))

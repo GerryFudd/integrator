@@ -1,9 +1,10 @@
-from elementary_functions.utils import FunctionSum, ConstantFunction, \
-    CompositeFunction
+from elementary_functions.utils import FunctionSum, CompositeFunction
+from elementary_functions.calculus_utils import ConstantFunction, \
+    DifferentiableFunction
 from custom_numbers.types import Numeric, ComputationType
 
 
-class PowerFunction:
+class PowerFunction(DifferentiableFunction):
     def __init__(self, power: Numeric, coefficient: Numeric = 1):
         self.power = power
         self.coefficient = coefficient
@@ -37,7 +38,12 @@ class PowerFunction:
             return f'{self.coefficient}x^{self.power}'
         return f'{self.coefficient}x^({self.power})'
 
+    def differentiate(self) -> DifferentiableFunction:
+        return PowerFunction(self.power - 1, self.coefficient * self.power)
+
     def evaluate(self, x: ComputationType) -> ComputationType:
+        if self.power == 0:
+            return x.of(self.coefficient)
         return (x ** self.power) * self.coefficient
 
     def __mul__(self, other):

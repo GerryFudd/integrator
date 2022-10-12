@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from elementary_functions.polynomial import Polynomial
 from elementary_functions.power import PowerFunction
-from elementary_functions.utils import ConstantFunction
+from elementary_functions.calculus_utils import ConstantFunction
 
 
 class TestPolynomial(TestCase):

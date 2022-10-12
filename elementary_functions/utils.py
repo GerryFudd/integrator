@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from typing import Protocol, List, runtime_checkable, Union
 
-from custom_numbers.types import Numeric, ComputationType
+from custom_numbers.types import ComputationType
 
 
 @runtime_checkable
@@ -44,7 +44,7 @@ class FunctionSum:
         if hasattr(other, 'constituents'):
             return set(self.constituents) == set(other.constituents)
         if len(self.constituents) == 0:
-            return ConstantFunction() == other
+            return other.__req__(self)
         if len(self.constituents) > 1:
             return False
         return self.constituents[0] == other
@@ -55,7 +55,7 @@ class FunctionSum:
     def __mul__(self, other):
         return sum(
             map(lambda f: other * f, self.constituents),
-            ConstantFunction(),
+            FunctionSum(),
         )
 
     def __rmul__(self, other):
@@ -87,7 +87,7 @@ class FunctionProd:
         if hasattr(other, 'constituents'):
             return set(self.constituents) == set(other.constituents)
         if len(self.constituents) == 0:
-            return ConstantFunction(1) == other
+            return other.__req__(self)
         if len(self.constituents) > 1:
             return False
         return self.constituents[0] == other
@@ -103,6 +103,12 @@ class FunctionProd:
             raise ArithmeticError
         return result
 
+    def __mul__(self, other):
+        return FunctionProd(
+            self.constituents[0] * other,
+            *self.constituents[1:],
+        )
+
     def __rmul__(self, other):
         return FunctionProd(
             other * self.constituents[0],
@@ -117,39 +123,6 @@ class FunctionProd:
             lambda f: f @ other,
             self.constituents,
         ))
-
-
-class ConstantFunction:
-    def __init__(self, val: Numeric = 0):
-        self.val = val
-
-    def __str__(self):
-        return str(self.val)
-
-    def __repr__(self):
-        return f'ConstantFunction({self.val})'
-
-    def __eq__(self, other):
-        if isinstance(other, ConstantFunction):
-            return self.val == other.val
-        return other == self
-
-    def evaluate(self, x: Numeric) -> Numeric:
-        return self.val
-
-    def __mul__(self, other):
-        return self.val * other
-
-    def __rmul__(self, other):
-        return ConstantFunction(other * self.val)
-
-    def __add__(self, other):
-        if self.val == 0:
-            return other
-        return FunctionSum(self, other)
-
-    def __matmul__(self, other):
-        return self
 
 
 class CompositeFunction:

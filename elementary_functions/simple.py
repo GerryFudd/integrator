@@ -3,7 +3,8 @@ from __future__ import annotations
 from math import inf
 from typing import List
 
-from elementary_functions.utils import FunctionSum, ConstantFunction
+from elementary_functions.utils import FunctionSum
+from elementary_functions.calculus_utils import ConstantFunction
 from general.interval import Interval
 from custom_numbers.types import Numeric, ComputationType
 
