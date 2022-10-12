@@ -1,6 +1,8 @@
 from decimal import Decimal
 
-from custom_numbers.exact import RadicalTerm, RationalNumber
+from custom_numbers.exact import RationalNumber
+from custom_numbers.radicals.radical_sum import RadicalSum
+from custom_numbers.radicals.radical_term import RadicalTerm
 from custom_numbers.utils import newton_int_sqrt
 from custom_numbers.types import Numeric
 
@@ -186,14 +188,28 @@ def test_radical_term_eq_rational():
     assert RadicalTerm(RationalNumber(6, 7)) == RationalNumber(6, 7)
 
 
-def test_radical_term_reduce():
+def test_radical_term_reduce_extract_exact_root_factor():
     assert RadicalTerm.reduced(RationalNumber(3, 7), 2, RationalNumber(4)) == \
            RationalNumber(6, 7)
-    assert RadicalTerm.reduced(RationalNumber(3, 7), 2, RationalNumber(8, 9)) == \
-           RadicalTerm(RationalNumber(6, 21), 2, RationalNumber(2))
+    assert RadicalTerm.reduced(RationalNumber(3, 7), 2, RationalNumber(8, 9)) \
+           == RadicalTerm(RationalNumber(6, 21), 2, RationalNumber(2))
     assert RadicalTerm.reduced(1, 2, RationalNumber(
         23**2*29**3*101, 24
-    )) == RadicalTerm(RationalNumber(23 * 29, 2), 2, RationalNumber(29 * 101, 6))
+    )) == RadicalTerm(
+        RationalNumber(23 * 29, 2), 2, RationalNumber(29 * 101, 6)
+    )
+
+
+def test_radical_term_reduce_reduce_root_by_factor():
+    assert RadicalTerm.reduced(RationalNumber(1), 6, RationalNumber(25)) == \
+           RadicalTerm(RationalNumber(1), 3, RationalNumber(5))
+    assert RadicalTerm.reduced(RationalNumber(1), 6, RationalNumber(125)) == \
+           RadicalTerm(RationalNumber(1), 2, RationalNumber(5))
+
+
+def test_radical_term_reduce_extract_root_factor_and_reduce_root():
+    assert RadicalTerm.reduced(RationalNumber(1), 6, RationalNumber(2304)) == \
+        RadicalTerm(RationalNumber(2), 3, RationalNumber(6))
 
 
 def test_radical_term_pow():
@@ -202,4 +218,49 @@ def test_radical_term_pow():
     b = RadicalTerm(RationalNumber(10, 17), 2, RationalNumber(17 * 61, 65))
     assert b ** 3 == RadicalTerm(
         RationalNumber(2**3*5**2*61, 13*17**2), 2, RationalNumber(17*61, 65)
+    )
+
+
+def test_exact_constructor():
+    assert isinstance(RadicalSum.of(1), RadicalSum)
+    assert isinstance(RadicalSum.of(1.25), RadicalSum)
+    assert isinstance(RadicalSum(
+        RadicalTerm.reduced(3, 2, RationalNumber(5)),
+        RadicalTerm.of(7),
+    ), RadicalSum)
+
+
+def test_radical_sum_multiplication():
+    a = RadicalSum(
+        RadicalTerm(RationalNumber(12), 2, RationalNumber(5)),
+        RadicalTerm(RationalNumber(4), 2, RationalNumber(7)),
+    )
+    b = RadicalSum(
+        RadicalTerm(RationalNumber(12), 2, RationalNumber(5)),
+        RadicalTerm(RationalNumber(-4), 2, RationalNumber(7)),
+    )
+    assert a * b == RadicalSum.of(144 * 5 - 16 * 7)
+
+
+def test_radical_sum_limited_flip_one_term():
+    one_term_sum = RadicalSum(
+        RadicalTerm(RationalNumber(2, 3), 2, RationalNumber(5, 3))
+    )
+    assert 1 / one_term_sum == RadicalSum(
+        RadicalTerm(RationalNumber(3, 2), 2, RationalNumber(3, 5))
+    )
+
+
+def test_radical_sum_limited_flip_two_terms():
+    two_term_sum = RadicalSum(
+        RadicalTerm(RationalNumber(2), 2, RationalNumber(5)),
+        RadicalTerm(RationalNumber(3), 3, RationalNumber(4))
+    )
+    assert 1 / two_term_sum == RadicalSum(
+        RadicalTerm(RationalNumber(-50, 229), 2, RationalNumber(5)),
+        RadicalTerm(RationalNumber(75, 229), 3, RationalNumber(4)),
+        RadicalTerm(RationalNumber(-45, 229), 6, RationalNumber(500)),
+        RadicalTerm(RationalNumber(135, 229)),
+        RadicalTerm(RationalNumber(-81, 458), 6, RationalNumber(2000)),
+        RadicalTerm(RationalNumber(243, 458), 3, RationalNumber(2)),
     )

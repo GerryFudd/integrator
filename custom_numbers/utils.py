@@ -39,3 +39,7 @@ def newton_int_sqrt(x: int) -> int:
         if abs(candidate - next_candidate) <= 1:
             return next_candidate
         candidate = next_candidate
+
+
+def lcm(a: int, b: int) -> int:
+    return a * b // gcd(a, b)

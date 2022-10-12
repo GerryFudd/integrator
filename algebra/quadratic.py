@@ -40,6 +40,9 @@ class QuadraticEquation(QuadraticSolvable[Numeric]):
         self.right = right
         self.condition = Condition[Numeric](0, True)
 
+    def __repr__(self):
+        return f'QuadraticEquation(left={self.left},right={self.right})'
+
     def solve(self) -> List[Numeric]:
         return self.boundaries()
 
@@ -54,6 +57,10 @@ class QuadraticInequality(QuadraticSolvable[Interval]):
         self.left = left
         self.right = right
         self.condition = condition
+
+    def __repr__(self):
+        return f'QuadraticInequality(left={self.left},right={self.right},' \
+               f'condition={self.condition})'
 
     def solve(self) -> List[Interval]:
         boundaries = self.boundaries()
