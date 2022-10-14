@@ -15,4 +15,4 @@ def differentiate(func: Function):
     if isinstance(func, CharacteristicFunction) \
             or isinstance(func, SimpleFunction):
         return ConstantFunction()
-    return NotImplemented
+    raise NotImplementedError

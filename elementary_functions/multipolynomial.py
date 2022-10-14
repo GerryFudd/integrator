@@ -1,26 +1,9 @@
+from __future__ import annotations
+
+from typing import Callable
+
 from custom_numbers.utils import maximum
-from general.table import IterableTable
-
-
-def resolve_position(position_a, position_b):
-    if position_a == position_b:
-        return position_a
-    if position_a is None:
-        return position_b
-    if position_b is None:
-        return position_a
-    if len(position_a) != len(position_b):
-        raise Exception('Can\'t compare positions of differing dimension.')
-
-    for i in range(len(position_a)):
-        # If one position has a smaller index anywhere starting from the
-        # front, then it is earlier
-        if position_a[i] < position_b[i]:
-            return position_a
-        if position_b[i] < position_a[i]:
-            return position_b
-    raise Exception('Positions should be identical, but didn\'t come out '
-                    f'equal\n{position_a}\n{position_b}')
+from general.table import IterableTable, TablePosition, remove_dim, AnyTableIterable
 
 
 def var_display(variable, power):
@@ -45,71 +28,104 @@ def vector_sum(l1, l2):
     return result
 
 
+class ReMapper:
+    def __init__(self, index_mapping: list[int]):
+        self.index_mapping = index_mapping
+
+    def remap(self, position: TablePosition):
+        return TablePosition(
+            [position.value[n] for n in self.index_mapping]
+        )
+
+
 class Multipolynomial:
+
+    @staticmethod
+    def named(param):
+        return Multipolynomial([param], [0, 1])
+
     @staticmethod
     def zero():
-        return Multipolynomial([], [])
+        return Multipolynomial([], 0)
 
     @staticmethod
     def one():
-        return Multipolynomial([], [1])
+        return Multipolynomial([], 1)
 
-    def __init__(self, variables, coefficients):
+    def __init__(self, variables, coefficients=None):
         self.variables = variables
-        self.coefficients = IterableTable(len(variables), coefficients)
+        if coefficients is None:
+            coefficients = 0 if len(self.variables) == 0 else []
+        self.coefficients = IterableTable(len(variables), coefficients, 0)
 
-    def __get_re_mapper(self, other_variables):
+    # re_mapper = self.variables^-1 o other.variables
+    def get_re_mapper(self, other_variables: list[str]) -> ReMapper:
         if len(other_variables) != self.dim:
-            return None
-        variable_mapping = {}
-        remaining = list(range(self.dim))
-        for i in range(self.dim):
-            to_remove = None
-            for j in remaining:
-                if self.variables[i] == other_variables[j]:
-                    variable_mapping[i] = j
-                    to_remove = j
-                    break
-            if to_remove is not None:
-                remaining.remove(to_remove)
-        return variable_mapping
+            raise IndexError
+
+        self_variables_inverse = {}
+        for self_dim, val in enumerate(self.variables):
+            self_variables_inverse[val] = self_dim
+        return ReMapper(list(map(
+            lambda x: self_variables_inverse[x], other_variables
+        )))
+
+    def re_map_indices(self) -> Multipolynomial:
+        if self.dim == 0 or self.dim == 1:
+            return self
+
+        other_variables: list[str] = sorted(self.variables)
+        if other_variables == self.variables:
+            return self
+
+        re_mapper = self.get_re_mapper(other_variables)
+
+        result_indices = IterableTable(self.dim, [], 0)
+        # position p[0],...,p[dim-1] points to the coefficient of
+        # self.variables[0]^p[0]...self.variables[dim-1]^p[dim-1]
+        for position, value in self.coefficients:
+            # Suppose a, b, and c are distinct indices between 0 and dim-1 and
+            # self.values[a]='x', self.values[b]='y', and self.values[c]='z'.
+            # If p[a]=i, p[b]=j, and p[c]=k with p[n]=0 for all other
+            # indices, then self[p] = v implies that x^iy^jz^k has coefficient
+            # v.
+            #
+            # Now suppose that other.values[a]='y', other.values[b]='z',
+            # and other.values[c]='x'. To indicate that the coefficient of
+            # x^iy^jz^k is v we must assign other[q]=v where q[c]=i,
+            # q[a]=j, and q[b]=k with all other q[n]=0.
+            # in this case
+            # re_mapper[a]=self.values^-1('y')=b
+            # re_mapper[b]=self.values^-1('z')=c
+            # re_mapper[c]=self.values^-1('x')=a
+            # and q[n]:=p[re_mapper[n]] results in
+            # q[a]=p[re_mapper[a]]=p[b]=j
+            # q[b]=p[re_mapper[b]]=p[c]=k
+            # q[c]=p[re_mapper[c]]=p[a]=i
+            #
+            # self.variables(self.variables^-1(
+            #   other.variables[m]
+            # ))^q[m]=self.variables(
+            #   self.variables^-1(other.variables[n])
+            # )^p[self.variables^-1(other.variables[n])]
+            # implying q[m] = p[self.variables^-1(other.variables(m))
+
+            # Therefore q[other.variables^-1(self.variables(n))]=p[n]
+            result_indices[re_mapper.remap(position)] = value
+        return Multipolynomial(other_variables, result_indices.values)
 
     def __eq__(self, other):
         if not isinstance(other, Multipolynomial):
             return False
-        # If the parameters are equal, then the instances are
-        if self.variables == other.variables and \
-                self.coefficients == other.coefficients:
-            return True
-
-        # The polynomials are also equal if they use the same variables
-        # in a different order
-        if self.dim != other.dim:
-            return False
-        if len(self.coefficients.table) != len(other.coefficients.table):
-            return False
-        variable_mapping = self.__get_re_mapper(other.variables)
-        if len(variable_mapping) < self.dim:
-            return False
-        for position, value in other.coefficients:
-            mapped_position = []
-            for x in range(self.dim):
-                mapped_position.append(position[variable_mapping[x]])
-            if value != self[mapped_position]:
-                return False
-        return True
+        return self.variables == other.variables \
+            and self.coefficients.values == other.coefficients.values
 
     def __getitem__(self, position):
-        return self.coefficients.get(position)
+        val = self.coefficients[position]
+        return 0 if val is None else val
 
     def __setitem__(self, position, value):
-        return self.coefficients.set(position, value)
-
-    def __has(self, position):
-        return self.coefficients.has(position)
-
-    def __next(self, position):
-        return self.coefficients.next(position)
+        self.coefficients[position] = value
 
     def __str__(self):
         if len(self.variables) == 0:
@@ -128,8 +144,8 @@ class Multipolynomial:
                 new_term = new_term + var_display(
                     self.variables[i], position[i]
                 )
-            if new_term == '':
-                new_term = '1'
+            if new_term in ('', '-'):
+                new_term += '1'
             result.append(new_term)
         return ' + '.join(result)
 
@@ -137,38 +153,60 @@ class Multipolynomial:
         return f'Multipolynomial(variables={self.variables}, ' \
                f'coefficients={self.coefficients})'
 
-    def __reduce(self):
-        variables_to_remove = []
+    def __trim_trailing_zeros(self):
+        codimension_zero = 0
         for i in range(self.dim):
-            # variable_index counts backwards intentionally
-            # We first reduce the most buried lists in the table (representing
-            # the last variable) by removing trailing 0's. Then we walk back
-            # to each previous variable and see if it needs to be removed.
-            # When a variable is removed, only the ones that follow it are
-            # shifted, so we capture the variable indexes in reverse order
-            # and remove them that way.
-            variable_index = self.dim - i - 1
-            max_len = 0
-            for position, value in IterableTable(variable_index,
-                                                 self.coefficients.table):
-                while isinstance(value, list) and len(value) > 0 \
-                        and (value[-1] == 0 or value[-1] == []):
-                    value.pop()
-                max_len = maximum(max_len, len(value))
-            if max_len <= 1:
-                variables_to_remove.append(variable_index)
-        for j in variables_to_remove:
-            del self.variables[j]
-            self.coefficients.remove_dim(j)
-        return self
+            codimension_zero = [codimension_zero]
+            current_dim = self.dim - i - 1
+            for position, value in IterableTable(
+                current_dim, self.coefficients.values,
+                codimension_zero
+            ):
+                if isinstance(value, list):
+                    while True:
+                        if len(value) == 0:
+                            break
+                        elif isinstance(value[-1], list) \
+                                and len(value[-1]) == 0:
+                            value.pop()
+                        elif value[-1] == 0:
+                            value.pop()
+                        else:
+                            break
 
-    def __extend_with(self, other_variables):
-        extended_self = self.copy()
+    def _reduce(self):
+        result = self.copy()
+        if self.dim == 0:
+            return result
+        variables_to_keep = set()
+
+        for position, value in self.coefficients:
+            if value != 0:
+                for dim, index in position:
+                    if index > 0:
+                        variables_to_keep.add(dim)
+                if len(variables_to_keep) == self.dim:
+                    break
+
+        for j in sorted(list(range(self.dim)), reverse=True):
+            if j not in variables_to_keep:
+                del result.variables[j]
+                result.coefficients = remove_dim(result.coefficients, j)
+        self.__trim_trailing_zeros()
+        return result
+
+    def extend_with(self, other_variables):
+        new_variables = []
         for v in other_variables:
-            if not (v in self.variables):
-                extended_self.variables.append(v)
-                extended_self.coefficients.add_dim()
-        return extended_self
+            if v not in self.variables:
+                new_variables.append(v)
+        result = Multipolynomial(self.variables.copy() + new_variables)
+        for position, value in self.coefficients:
+            new_position = TablePosition(
+                position.value + ([0]*(result.dim - self.dim))
+            )
+            result[new_position] = value
+        return result
 
     @property
     def dim(self):
@@ -176,63 +214,78 @@ class Multipolynomial:
 
     def copy(self):
         return Multipolynomial(
-            self.variables.copy(), self.coefficients.table.copy()
+            self.variables.copy(),
+            self.coefficients.values
+            if self.coefficients.dim == 0
+            else self.coefficients.values.copy()
         )
 
-    def __do_plus(self, summand):
+    def __unify_variables_and_do(
+        self, other: Multipolynomial,
+        action: Callable[[Multipolynomial, Multipolynomial], Multipolynomial],
+    ) -> Multipolynomial:
+
+        x = self.extend_with(other.variables).re_map_indices()
+        y = other.extend_with(x.variables).re_map_indices()
+
+        result = action(x, y)
+        return result
+
+    def __do_add(self, summand):
         result = Multipolynomial(self.variables.copy(), [])
-        position = [0] * self.dim
-        while self.__has(position) or summand.__has(position):
-            a = self[position]
-            b = summand[position]
-            if a is None:
-                result[position] = b
-            elif b is None:
-                result[position] = a
-            else:
-                result[position] = a + b
-            position = resolve_position(
-                self.__next(position),
-                summand.__next(position)
-            )
-        return result.__reduce()
+        for position, values in AnyTableIterable(
+            self.coefficients, summand.coefficients
+        ):
+            result[position] = sum(values)
+        return result._reduce()
 
-    def plus(self, summand):
-        if self.variables != summand.variables:
-            if set(self.variables) == set(summand.variables):
-                return self.plus(Multipolynomial(
-                    self.variables,
-                    summand.coefficients.re_map_indices(
-                        summand.__get_re_mapper(self.variables)
-                    ).table
-                ))
+    def __add__(self, other):
+        if isinstance(other, int):
+            return self + Multipolynomial([], other)
+        if not isinstance(other, Multipolynomial):
+            raise NotImplementedError
+        result = self.__unify_variables_and_do(
+            other, lambda x, y: x.__do_add(y)
+        )
+        return result
 
-            return self.__extend_with(summand.variables)\
-                .plus(summand.__extend_with(self.variables))
+    def __sub__(self, other):
+        return self + -other
 
-        return self.__do_plus(summand)
+    def __neg__(self):
+        result = Multipolynomial(self.variables)
+        for pos, val in self.coefficients:
+            result[pos] = -val
+        return result
 
-    def times(self, multiplicand):
-        result = Multipolynomial(self.variables, [])\
-            .__extend_with(multiplicand.variables)
+    def __do_mul(self, multiplicand: Multipolynomial):
+        result = Multipolynomial(self.variables.copy())
 
         for pos, val in self.coefficients:
             for other_pos, other_val in multiplicand.coefficients:
-                result_pos = vector_sum(pos, other_pos)
+                result_pos = pos + other_pos
                 result[result_pos] = (result[result_pos] or 0) + val * other_val
-        return result.__reduce()
+        return result._reduce()
 
-    def power(self, exponent):
-        if not isinstance(exponent, int) or exponent < 0:
-            raise Exception('Only whole number exponents are supported.')
-        if exponent == 0:
-            return Multipolynomial.one()
-        if exponent == 1:
-            return self.copy()
+    def __mul__(self, other):
+        if not isinstance(other, Multipolynomial):
+            raise NotImplementedError
 
-        copies = 1
-        result = self.copy()
-        while copies < exponent:
-            result = result.times(self)
-            copies = copies + 1
+        return self.__unify_variables_and_do(
+            other, lambda x, y: x.__do_mul(y)
+        )
+
+    def __rmul__(self, other):
+        if isinstance(other, int):
+            return Multipolynomial([], other) * self
+        return self * other
+
+    def __pow__(self, power, modulo=None):
+        if not isinstance(power, int) or power < 0:
+            raise NotImplementedError
+        copies = 0
+        result = Multipolynomial.one()
+        while copies < power:
+            result *= self
+            copies += 1
         return result

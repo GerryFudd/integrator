@@ -113,7 +113,7 @@ class RadicalSum(BaseExactNumber):
     def limited_flip(self) -> RadicalSum:
         term_count = len(self.radical_terms)
         if term_count > 2:
-            return NotImplemented
+            raise NotImplementedError
         first_term = self.radical_terms[0]
         if term_count == 1:
             if isinstance(first_term.content, FlippableNumber):

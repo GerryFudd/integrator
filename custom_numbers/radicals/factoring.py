@@ -12,7 +12,7 @@ class PrimeFactorization:
 
     def exact_root(self, root: int) -> tuple[int, int]:
         if root < 1:
-            return NotImplemented
+            raise NotImplementedError
         result = 1
         remainder = 1
         for prime, multiplicity in self:
@@ -23,7 +23,7 @@ class PrimeFactorization:
 
     def reduce(self, root: int) -> tuple[PrimeFactorization, int]:
         if root < 1:
-            return NotImplemented
+            raise NotImplementedError
         new_factors = {}
 
         for prime, multiplicity in self:
@@ -64,3 +64,10 @@ def factor(n: int) -> PrimeFactorization:
         odd_primes.append(x)
         factors[x] = 0
     return PrimeFactorization(factors)
+
+
+# (a/b)^(1/p)+(c/d)^(1/q)
+# (a^q/b^q)^(1/(pq))+(c^p/d^p)^(1/(pq))
+# x^(1/n)+y^(1/n)=(x/y)^(1/n)y^(1/n)+y^(1/n)
+#                =((x/y)^(1/n)+1)y^(1/n)
+#                =

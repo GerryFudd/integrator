@@ -49,7 +49,7 @@ class RationalNumber(ExactNumber):
             return RationalNumber.from_float(x)
         if isinstance(x, Decimal):
             return RationalNumber.from_dec(x)
-        return NotImplemented
+        raise NotImplementedError
 
     def __init__(self, numerator: int = 0, denominator: int = 1):
         if denominator == 0:

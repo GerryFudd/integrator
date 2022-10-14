@@ -123,7 +123,7 @@ class RadicalTerm(BaseExactNumber):
                     self.coefficient + other.coefficient,
                     self.root, self.content,
                 )
-            return NotImplemented
+            raise NotImplementedError
         if self.root != 1:
             return other.__radd__(self)
 

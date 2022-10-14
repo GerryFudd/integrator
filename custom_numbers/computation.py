@@ -61,7 +61,7 @@ class DecimalNumber(Convertable):
 
     def to_decimal(self) -> Decimal:
         if self.inf_type != 0:
-            return NotImplemented
+            raise NotImplementedError
         return self.d
 
     @staticmethod
