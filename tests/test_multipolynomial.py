@@ -1,6 +1,25 @@
 from unittest import TestCase
 
 from elementary_functions.multipolynomial import Multipolynomial
+from general.table import TablePosition, IterableTable
+
+
+def cancel_non_power_terms(
+    m: Multipolynomial, power: int, candidate: Multipolynomial
+):
+    for pos, val in m.coefficients:
+        if val == 0:
+            continue
+        for _, p in pos:
+            if p % power != 0:
+                candidate[TablePosition(
+                    pos.value[:-1] + [pos.value[-1] - 1]
+                )] = -val
+                break
+
+
+def nth(n: int, x: int | list, filler: int | list = 0):
+    return [filler] * n + [x]
 
 
 class TestMultipolynomial(TestCase):
@@ -277,6 +296,54 @@ class TestMultipolynomialPower(TestCase):
             ]
         )
 
+    def test_finding_exact_power(self):
+        x = Multipolynomial.named('x')
+        y = Multipolynomial.named('y')
+        z = Multipolynomial.named('z')
+        factor = Multipolynomial(
+            ['x', 'y', 'z'],
+            [
+                [[0, 1], [1]],
+                [[1]]
+            ]
+        )
+        base_coefficients = IterableTable(2, [
+            [1, -1, 1, 2, -2, 2, 1, -1, 1],
+            [-1, 2, -3, 1, 1, -3, 2, -1],
+            [1, -3, 6, -7, 6, -3, 1],
+            [2, 1, -7, -7, 1, 2],
+            [-2, 1, 6, 1, -2],
+            [2, -3, -3, 2],
+            [1, 2, 1],
+            [-1, -1],
+            [1]
+        ], 0)
+        candidate = Multipolynomial(['x', 'y', 'z'], [])
+        for pos, coeff in base_coefficients:
+            candidate_pos = TablePosition(
+                [pos[0], pos[1], 8 - (pos[0] + pos[1])]
+            )
+            candidate[candidate_pos] = coeff
+
+        print(candidate)
+        result = factor * candidate
+        print(result)
+        assert result == Multipolynomial(
+            ['x', 'y', 'z'],
+            [
+                [nth(9, 1), [], [], nth(6, 3), [], [], nth(3, 3), [], [], [1]],
+                [],
+                [],
+                [nth(6, 3), [], [], nth(3, -21), [], [], [3]],
+                [],
+                [],
+                [[0, 0, 0, 3], [], [], [3]],
+                [],
+                [],
+                [[1]]
+            ]
+        )
+
     def test_big_product(self):
         x = Multipolynomial(['x'], [0, 1])
         y = Multipolynomial(['y'], [0, 1])
@@ -290,6 +357,7 @@ class TestMultipolynomialPower(TestCase):
 
         result = t * (x - y) * w
         # print(result)
+
         # -y^3z^8+y^4z^7-y^5z^6-2y^6z^5+2y^7z^4-2y^8z^3-y^9z^2+y^(10)z-y^(11) 
         # xy^3z^7-2xy^4z^6+3xy^5z^5-xy^6z^4-xy^7z^3+3xy^8z^2-2xy^9z+xy^(10) 
         # -x^2y^3z^6+3x^2y^4z^5-6x^2y^5z^4+7x^2y^6z^3-6x^2y^7z^2+3x^2y^8z-x^2y^9 
@@ -302,6 +370,7 @@ class TestMultipolynomialPower(TestCase):
         # +x^9z^2+2x^9yz+x^9y^2 
         # -x^(10)z-x^(10)y 
         # +x^(11)
+        # every power is adjacent to a power of three
         #
         # print((x + y + z) * result)
         # -y^3z^9 + -3y^6z^6 + -3y^9z^3 + -y^(12) 
@@ -317,50 +386,82 @@ class TestMultipolynomialPower(TestCase):
                     [],
                     [],
                     [],
+                    # y^3
                     [0, 0, 0, 0, 0, 0, 0, 0, -1],
+                    # y^4
                     [0, 0, 0, 0, 0, 0, 0, 1],
+                    # y^5
                     [0, 0, 0, 0, 0, 0, -1],
+                    # y^6
                     [0, 0, 0, 0, 0, -2],
+                    # y^7
                     [0, 0, 0, 0, 2],
+                    # y^8
                     [0, 0, 0, -2],
+                    # y^9
                     [0, 0, -1],
+                    # y^(10)
                     [0, 1],
+                    # y^(11)
                     [-1]
                 ],
                 [
                     [],
                     [],
                     [],
+                    # xy^3
                     [0, 0, 0, 0, 0, 0, 0, 1],
+                    # xy^4
                     [0, 0, 0, 0, 0, 0, -2],
+                    # xy^5
                     [0, 0, 0, 0, 0, 3],
+                    # xy^6
                     [0, 0, 0, 0, -1],
+                    # xy^7
                     [0, 0, 0, -1],
+                    # xy^8
                     [0, 0, 3],
+                    # xy^9
                     [0, -2],
+                    # xy^(10)
                     [1]
                 ],
                 [
                     [],
                     [],
                     [],
+                    # x^2y^3
                     [0, 0, 0, 0, 0, 0, -1],
+                    # x^2y^4
                     [0, 0, 0, 0, 0, 3],
+                    # x^2y^5
                     [0, 0, 0, 0, -6],
+                    # x^2y^6
                     [0, 0, 0, 7],
+                    # x^2y^7
                     [0, 0, -6],
+                    # x^2y^8
                     [0, 3],
+                    # x^2y^9
                     [-1]
                 ],
                 [
+                    # x^3
                     [0, 0, 0, 0, 0, 0, 0, 0, 1],
+                    # x^3y
                     [0, 0, 0, 0, 0, 0, 0, -1],
+                    # x^3y^2
                     [0, 0, 0, 0, 0, 0, 1],
                     [],
+                    # x^3y^4
                     [0, 0, 0, 0, -3],
+                    # x^3y^5
                     [0, 0, 0, 9],
+                    # x^3y^6
                     [0, 0, 8],
+                    # x^3y^7
                     [0, -2],
+                    # x^3y^8
                     [-1]
                 ],
                 [

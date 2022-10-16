@@ -30,11 +30,14 @@ class Vector:
             result.append(self[index] + other[index])
         return Vector(*result)
 
+    def __sub__(self, other):
+        return self + -other
+
     def __rmul__(self, other):
         return Vector(*map(lambda x: other * x, self.coefficients))
 
     def __truediv__(self, other):
-        return Vector(*map(lambda x: x / other, self.coefficients))
+        return (1/other) * self
 
     def __neg__(self):
         return -1 * self
