@@ -93,11 +93,14 @@ class RationalNumber(ExactNumber):
         return self + other
 
     def __mul__(self, other):
-        multiplicand = self.of(other)
+        try:
+            multiplicand = self.of(other)
+        except NotImplementedError:
+            return other.__rmul__(self)
         return RationalNumber(
             self.numerator * multiplicand.numerator,
             self.denominator * multiplicand.denominator,
-            )
+        )
 
     def __rmul__(self, other):
         return self * other
