@@ -1,7 +1,7 @@
 from math import inf
 
 from algebra.solvable import Condition
-from algebra.linear import LinearEquation, LinearInequality
+from algebra.linear.equations import LinearEquation, LinearInequality
 from algebra.quadratic import QuadraticEquation, QuadraticInequality
 from algebra.expression import PolynomialExpression
 from custom_numbers.exact.factory import to_exact

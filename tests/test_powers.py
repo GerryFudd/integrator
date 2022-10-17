@@ -1,33 +1,15 @@
-from algebra.linear import AffineSubspace, LinearSubspace
-from algebra.powers import p_square
+from algebra.linear.subspace import AffineSubspace, LinearSubspace
+from algebra.linear.powers import p_square, solve_left_side
 
 
 def test_solves_power_square():
-    assert p_square(2) == AffineSubspace.pure_subspace(
-        ['z'], LinearSubspace(['a[0,1]', 'a[1,0]', 'a[1,1]'], [[-1], [-1], [2]])
-    )
-
-    assert p_square(3) == AffineSubspace.pure_subspace(
-        ['z'],
-        LinearSubspace(
-            ['a[0,1]', 'a[0,2]',
-             'a[1,0]', 'a[1,1]', 'a[1,2]',
-             'a[2,0]', 'a[2,1]', 'a[2,2]'],
-            [
-                [-1], [1],
-                [-1], [2], [-3],
-                [1], [-3], [6]
-            ]
-        )
-    )
-
     assert p_square(4) == AffineSubspace.pure_subspace(
-        ['z'],
-        LinearSubspace(
+        LinearSubspace.of(
             ['a[0,1]', 'a[0,2]', 'a[0,3]',
              'a[1,0]', 'a[1,1]', 'a[1,2]', 'a[1,3]',
              'a[2,0]', 'a[2,1]', 'a[2,2]', 'a[2,3]',
              'a[3,0]', 'a[3,1]', 'a[3,2]', 'a[3,3]'],
+            ['a[0,0]'],
             [
                 [-1], [1], [-1],
                 [-1], [2], [-3], [4],
@@ -39,104 +21,46 @@ def test_solves_power_square():
 
 
 def test_solves_power_square_with_top():
-    assert p_square(2, top_vals=AffineSubspace.pure_subspace(
-        ['1'], LinearSubspace(['a[1,1]'], [[2]])
-    )) == AffineSubspace.pure_subspace(
-        ['y[1]', 'z'],
-        LinearSubspace(
-            ['a[0,1]', 'a[1,0]', 'a[1,1]'],
-            [
-                [-2, -1],
-                [0, -1], [2, 2],
-            ]
-        )
-    )
 
-    assert p_square(3, top_vals=AffineSubspace.pure_subspace(
-        ['1'], LinearSubspace(['a[2,1]', 'a[2,2]'], [[-3], [6]])
-    )) == AffineSubspace.pure_subspace(
-        ['y[1]', 'z'],
-        LinearSubspace(
-            ['a[0,1]', 'a[0,2]',
-             'a[1,0]', 'a[1,1]', 'a[1,2]',
-             'a[2,0]', 'a[2,1]', 'a[2,2]'],
+    assert p_square(4, top_vals=LinearSubspace.of(
+        ['a[3,1]', 'a[3,2]', 'a[3,3]'],
+        ['a[0,0]'],
+        [[4], [-10], [20]]
+    ), symbol='b') == AffineSubspace.pure_subspace(
+        LinearSubspace.of(
+            ['b[0,1]', 'b[0,2]', 'b[0,3]',
+             'b[1,0]', 'b[1,1]', 'b[1,2]', 'b[1,3]',
+             'b[2,0]', 'b[2,1]', 'b[2,2]', 'b[2,3]',
+             'b[3,0]', 'b[3,1]', 'b[3,2]', 'b[3,3]'],
+            ['b[0,0]', 'a[0,0]'],
             [
-                [3, -1], [-9, 1],
-                [0, -1], [-3, 2], [12, -3],
-                [0, 1], [3, -3], [-15, 6]
-            ]
-        )
-    )
-
-    assert p_square(4, top_vals=AffineSubspace.pure_subspace(
-        ['1'], LinearSubspace(
-            ['a[3,1]', 'a[3,2]', 'a[3,3]'],
-            [[4], [-10], [20]]
-        )
-    )) == AffineSubspace.pure_subspace(
-        ['y[1]', 'z'],
-        LinearSubspace(
-            ['a[0,1]', 'a[0,2]', 'a[0,3]',
-             'a[1,0]', 'a[1,1]', 'a[1,2]', 'a[1,3]',
-             'a[2,0]', 'a[2,1]', 'a[2,2]', 'a[2,3]',
-             'a[3,0]', 'a[3,1]', 'a[3,2]', 'a[3,3]'],
-            [
-                [-4, -1], [14, 1], [-34, -1],
-                [0, -1], [4, 2], [-18, -3], [52, 4],
-                [0, 1], [-4, -3], [22, 6], [-74, -10],
-                [0, -1], [4, 4], [-26, -10], [100, 20]
+                [-1, -4], [1, 14], [-1, -34],
+                [-1, 0], [2, 4], [-3, -18], [4, 52],
+                [1, 0], [-3, -4], [6, 22], [-10, -74],
+                [-1, 0], [4, 4], [-10, -26], [20, 100]
             ]
         )
     )
 
 
 def test_solves_power_square_with_left():
-    assert p_square(2, AffineSubspace.pure_subspace(
-        ['1'], LinearSubspace(['a[1,1]'], [[2]])
-    )) == AffineSubspace.pure_subspace(
-        ['y[1]', 'z'],
-        LinearSubspace(
-            ['a[0,1]', 'a[1,0]', 'a[1,1]'],
-            [
-                [0, -1],
-                [-2, -1], [2, 2],
-            ]
-        )
-    )
 
-    assert p_square(3, AffineSubspace.pure_subspace(
-        ['1'], LinearSubspace(['a[1,2]', 'a[2,2]'], [[-3], [6]])
-    )) == AffineSubspace.pure_subspace(
-        ['y[1]', 'z'],
-        LinearSubspace(
-            ['a[0,1]', 'a[0,2]',
-             'a[1,0]', 'a[1,1]', 'a[1,2]',
-             'a[2,0]', 'a[2,1]', 'a[2,2]'],
+    assert p_square(4, LinearSubspace.of(
+        ['a[1,3]', 'a[2,3]', 'a[3,3]'],
+        ['a[0,0]'],
+        [[4], [-10], [20]]
+    ), symbol='q') == AffineSubspace.pure_subspace(
+        LinearSubspace.of(
+            ['q[0,1]', 'q[0,2]', 'q[0,3]',
+             'q[1,0]', 'q[1,1]', 'q[1,2]', 'q[1,3]',
+             'q[2,0]', 'q[2,1]', 'q[2,2]', 'q[2,3]',
+             'q[3,0]', 'q[3,1]', 'q[3,2]', 'q[3,3]'],
+            ['q[0,0]', 'a[0,0]'],
             [
-                [0, -1], [0, 1],
-                [3, -1], [-3, 2], [3, -3],
-                [-9, 1], [12, -3], [-15, 6]
-            ]
-        )
-    )
-
-    assert p_square(4, AffineSubspace.pure_subspace(
-        ['1'], LinearSubspace(
-            ['a[1,3]', 'a[2,3]', 'a[3,3]'],
-            [[4], [-10], [20]]
-        )
-    )) == AffineSubspace.pure_subspace(
-        ['y[1]', 'z'],
-        LinearSubspace(
-            ['a[0,1]', 'a[0,2]', 'a[0,3]',
-             'a[1,0]', 'a[1,1]', 'a[1,2]', 'a[1,3]',
-             'a[2,0]', 'a[2,1]', 'a[2,2]', 'a[2,3]',
-             'a[3,0]', 'a[3,1]', 'a[3,2]', 'a[3,3]'],
-            [
-                [0, -1], [0, 1], [0, -1],
-                [-4, -1], [4, 2], [-4, -3], [4, 4],
-                [14, 1], [-18, -3], [22, 6], [-26, -10],
-                [-34, -1], [52, 4], [-74, -10], [100, 20]
+                [-1, 0], [1, 0], [-1, 0],
+                [-1, -4], [2, 4], [-3, -4], [4, 4],
+                [1, 14], [-3, -18], [6, 22], [-10, -26],
+                [-1, -34], [4, 52], [-10, -74], [20, 100]
             ]
         )
     )
@@ -144,51 +68,59 @@ def test_solves_power_square_with_left():
 
 def test_solves_power_square_with_top_and_left():
     assert p_square(
-        2,
-        AffineSubspace.pure_subspace(
-            ['1', '2'], LinearSubspace(['a[1,1]'], [[2, 2]])
+        4,
+        LinearSubspace.of(
+                ['b[1,3]', 'b[2,3]', 'b[3,3]'],
+                ['1', '2'],
+                [[52, 4], [-74, -10], [100, 20]],
         ),
-        AffineSubspace.pure_subspace(
-            ['1', '2'], LinearSubspace(['a[1,1]'], [[2, 2]])
-        )
+        LinearSubspace.of(
+                ['f[3,1]', 'f[3,2]', 'f[3,3]'],
+                ['1', '2'],
+                [[52, 4], [-74, -10], [100, 20]],
+        ),
+        symbol='g',
     ) == AffineSubspace.pure_subspace(
-        ['y[1]', 'y[2]', 'z'],
-        LinearSubspace(
-            ['a[0,1]', 'a[1,0]', 'a[1,1]'],
+        LinearSubspace.of(
+            ['g[0,1]', 'g[0,2]', 'g[0,3]',
+             'g[1,0]', 'g[1,1]', 'g[1,2]', 'g[1,3]',
+             'g[2,0]', 'g[2,1]', 'g[2,2]', 'g[2,3]',
+             'g[3,0]', 'g[3,1]', 'g[3,2]', 'g[3,3]'],
+            ['g[0,0]', '1', '2'],
             [
-                [-2, -2, -1],
-                [-2, -2, -1], [4, 4, 2],
+                [-1, -52, -4], [1, 126, 14], [-1, -226, -34],
+                [-1, -52, -4], [2, 104, 8], [-3, -230, -22], [4, 456, 56],
+                [1, 126, 14], [-3, -230, -22], [6, 460, 44], [-10, -916, -100],
+                [-1, -226, -34], [4, 456, 56], [-10, -916, -100],
+                [20, 1832, 200]
             ]
         )
     )
 
-    assert p_square(
-        4,
-        AffineSubspace.pure_subspace(
-            ['1', '2'], LinearSubspace(
-                ['a[1,3]', 'a[2,3]', 'a[3,3]'],
-                [[52, 4], [-74, -10], [100, 20]],
-            )
-        ),
-        AffineSubspace.pure_subspace(
-            ['1', '2'], LinearSubspace(
-                ['a[3,1]', 'a[3,2]', 'a[3,3]'],
-                [[52, 4], [-74, -10], [100, 20]],
-            )
-        )
-    ) == AffineSubspace.pure_subspace(
-        ['y[1]', 'y[2]', 'z'],
-        LinearSubspace(
-            ['a[0,1]', 'a[0,2]', 'a[0,3]',
-             'a[1,0]', 'a[1,1]', 'a[1,2]', 'a[1,3]',
-             'a[2,0]', 'a[2,1]', 'a[2,2]', 'a[2,3]',
-             'a[3,0]', 'a[3,1]', 'a[3,2]', 'a[3,3]'],
-            [
-                [-52, -4, -1], [126, 14, 1], [-226, -34, -1],
-                [-52, -4, -1], [104, 8, 2], [-230, -22, -3], [456, 56, 4],
-                [126, 14, 1], [-230, -22, -3], [460, 44, 6], [-916, -100, -10],
-                [-226, -34, -1], [456, 56, 4], [-916, -100, -10],
-                [1832, 200, 20]
-            ]
+
+def test_find_iterated_squares():
+    assert solve_left_side(3) == AffineSubspace.pure_subspace(
+        LinearSubspace.of(
+            ['a0[0,1]', 'a0[0,2]',
+             'a0[1,0]', 'a0[1,1]', 'a0[1,2]',
+             'a0[2,0]', 'a0[2,1]', 'a0[2,2]',
+             'a1[0,1]', 'a1[0,2]',
+             'a1[1,0]', 'a1[1,1]', 'a1[1,2]',
+             'a1[2,0]', 'a1[2,1]', 'a1[2,2]',
+             'a2[0,1]', 'a2[0,2]',
+             'a2[1,0]', 'a2[1,1]', 'a2[1,2]',
+             'a2[2,0]', 'a2[2,1]', 'a2[2,2]',
+             'a2[0,0]', 'a1[0,0]'],
+            ['a0[0,0]'],
+            [[-1], [1],
+             [-1], [2], [-3],
+             [1], [-3], [6],
+             [1], [-7],
+             [-2], [1], [6],
+             [2], [-3], [-3],
+             [2], [1],
+             [-1], [-1], [0],
+             [1], [0], [0],
+             [1], [2]]
         )
     )
