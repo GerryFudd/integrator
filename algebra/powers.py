@@ -1,4 +1,4 @@
-from algebra.linear import LinearSystem, AffineSubspace
+from algebra.linear import AffineSubspace, LinearSystem
 
 
 def p_square(
