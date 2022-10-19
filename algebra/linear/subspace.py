@@ -8,67 +8,63 @@ from custom_numbers.types import Numeric
 class AffineSubspace:
     @staticmethod
     def exact(solution: Point):
-        return AffineSubspace(solution)
-
-    @staticmethod
-    def pure_subspace(
-        linear_subspace: LinearSubspace
-    ):
-        offset_mapping = {}
-        for v in linear_subspace.constrained_variables:
-            offset_mapping[v] = 0
-        return AffineSubspace(
-            Point(offset_mapping, linear_subspace.constrained_variables),
-            linear_subspace
-        )
+        variables = solution.variable_list
+        equations = []
+        for n, v, c in solution:
+            equations.append(MultiDimensionalEquation({v: 1}, c, variables))
+        return AffineSubspace(LinearSystem(*equations))
 
     def __init__(
         self,
-        offset: Point,
-        linear_subspace: LinearSubspace = None,
+        linear_system: LinearSystem,
     ):
-        self.offset = offset
-        self.linear_subspace = LinearSubspace.trivial(*offset.variable_list) \
-            if not linear_subspace else linear_subspace
+        self.linear_system = linear_system
+
+    @property
+    def offset(self):
+        point_builder = Point.builder()
+        for _, eq in self.linear_system:
+            i = eq.first_non_zero
+            if i == len(eq.coefficients):
+                continue
+            point_builder[eq.variables[i]] = eq[-1] / eq[i]
+        return point_builder.build()
 
     @property
     def free_variables(self):
-        return self.linear_subspace.free_variables
+        result = self.linear_system.variables.copy()
+        for v in self.constrained_variables:
+            result.remove(v)
+        return result
 
     @property
     def constrained_variables(self):
-        return self.linear_subspace.constrained_variables
+        return self.offset.variable_list
 
     def __str__(self):
-        if not self.free_variables:
-            return str(self.offset)
-
         result_lines = []
-        for i, out_var, row in self.linear_subspace:
+        for i, eq in self.linear_system:
+            line_start = None
             result_parts = []
-            if self.offset[out_var] != 0:
-                result_parts.append(str(self.offset[out_var]))
-            for j, in_var, c in row:
-                result_parts.append(f'{c}{in_var}')
-
+            for j, var, c in eq:
+                if c == 0:
+                    continue
+                if not line_start:
+                    line_start = f'{c}{var} = '
+                    if eq.value != 0:
+                        result_parts.append(str(eq.value))
+                else:
+                    result_parts.append(f'{-c}{var}')
             if not result_parts:
                 result_parts.append('0')
-
-            result_line = f'{out_var} = {" + ".join(result_parts)}'
+            if not line_start:
+                continue
+            result_line = f'{line_start}{" + ".join(result_parts)}'
             result_lines.append(result_line)
         return '\n' + '\n'.join(result_lines)
 
     def to_linear_system(self) -> LinearSystem:
-        equations = []
-        variables = self.constrained_variables + self.free_variables
-        for i, out_var, row in self.linear_subspace:
-            equation_mapping = {out_var: 1}
-            for j, in_var, c in row:
-                equation_mapping[in_var] = -c
-            equations.append(MultiDimensionalEquation(
-                equation_mapping, self.offset[out_var], variables,
-            ))
-        return LinearSystem(*equations)
+        return self.linear_system
 
     def __matmul__(self, other):
         if isinstance(other, Point):
@@ -80,101 +76,17 @@ class AffineSubspace:
                 if v not in variables:
                     variables.append(v)
             return (
-                self.to_linear_system().with_vars(variables)
-                + other.to_linear_system().with_vars(variables)
+                self.linear_system.with_vars(variables)
+                + other.linear_system.with_vars(variables)
             ).solve()
         raise NotImplementedError
 
     def __repr__(self):
-        return f'AffineSubspace(free_variables' \
-               f'={self.free_variables},' \
-               f'offset={self.offset}, ' \
-               f'linear_subspace={self.linear_subspace})'
+        return f'AffineSubspace(linear_system={self.linear_system})'
 
     def __eq__(self, other):
         return isinstance(other, AffineSubspace) \
-            and self.free_variables == other.free_variables \
-            and self.constrained_variables == other.constrained_variables \
-            and self.offset == other.offset \
-            and self.linear_subspace == other.linear_subspace
-
-
-class LinearSubspace:
-    @staticmethod
-    def trivial(*variables: str):
-        matrix = list(map(lambda _: LinearMapRow.empty(), variables))
-        return LinearSubspace(list(variables), [], matrix)
-
-    @staticmethod
-    def of(
-        constrained_variables: list[str],
-        free_variables: list[str],
-        matrix: list[list[Numeric]],
-    ):
-        result_matrix = []
-        for list_row in matrix:
-            mapping = {}
-            for i, c in enumerate(list_row):
-                mapping[free_variables[i]] = c
-            result_matrix.append(LinearMapRow(
-                mapping, free_variables
-            ))
-        return LinearSubspace(
-            constrained_variables, free_variables, result_matrix,
-        )
-
-    def __init__(
-        self,
-        constrained_variables: list[str],
-        free_variables: list[str],
-        matrix: list[LinearMapRow],
-    ):
-        self.constrained_variables = constrained_variables
-        self.free_variables = free_variables
-        self.matrix = matrix
-
-    def __matrix_str(self):
-        return '[' + ', '.join(map(str, self.matrix)) + ']'
-
-    def __str__(self):
-        return f'{self.__matrix_str()}u -> {self.constrained_variables}'
-
-    def __repr__(self):
-        return f'LinearSubspace(variables={self.constrained_variables}, ' \
-               f'matrix={self.__matrix_str()})'
-
-    def __eq__(self, other):
-        return isinstance(other, LinearSubspace) \
-               and self.constrained_variables == other.constrained_variables \
-               and self.free_variables == other.free_variables \
-               and self.matrix == other.matrix
-
-    def __hash__(self):
-        return hash((
-            tuple(*self.constrained_variables),
-            tuple(*self.free_variables),
-            tuple(*self.matrix),
-        ))
-
-    def __iter__(self) -> IndexedMapIterator[LinearMapRow]:
-        variable_lookup = {}
-        for i, v in enumerate(self.constrained_variables):
-            variable_lookup[v] = i
-        return IndexedMapIterator(
-            lambda x: self.matrix[variable_lookup[x]],
-            self.constrained_variables,
-        )
-
-    def __matmul__(self, other):
-        if not isinstance(other, Point):
-            return other.__rmatmul__(self)
-        result_mapping = {}
-        result_variables = self.constrained_variables
-        for i, out_var, row in self:
-            result_mapping[out_var] = 0
-            for j, in_var, c in row:
-                result_mapping[out_var] += c * other[in_var]
-        return Point(result_mapping, result_variables)
+            and self.linear_system == other.linear_system
 
 
 class LinearMapRow:
@@ -217,7 +129,29 @@ class LinearMapRow:
         return hash((self.mapping, *self.variables, 'LinearMapRow'))
 
 
+class PointBuilder:
+    def __init__(self):
+        self.mapping = {}
+        self.list = []
+
+    def __setitem__(self, key, value):
+        self.mapping[key] = value
+        if key not in self.list:
+            self.list.append(key)
+
+    def map(self, key: str, value: Numeric) -> PointBuilder:
+        self[key] = value
+        return self
+
+    def build(self):
+        return Point(self.mapping, self.list)
+
+
 class Point:
+    @staticmethod
+    def builder():
+        return PointBuilder()
+
     def __init__(
         self,
         variable_mapping: dict[str, Numeric],
@@ -298,6 +232,12 @@ class LinearSystem:
                 raise NotImplementedError
         self.equations = list(equations)
 
+    def __str__(self):
+        return ' and '.join(map(str, self.equations))
+
+    def __eq__(self, other):
+        return isinstance(other, LinearSystem) and set(self.equations) == set(other.equations)
+
     def with_vars(self, variables: list[str]):
         new_equations = []
         for eq in self.equations:
@@ -311,6 +251,9 @@ class LinearSystem:
                 new_equation_mapping, eq.value, variables
             ))
         return LinearSystem(*new_equations)
+
+    def __iter__(self):
+        return enumerate(self.equations).__iter__()
 
     def __add__(self, other):
         if not isinstance(other, LinearSystem):
@@ -352,39 +295,13 @@ class LinearSystem:
             self.equations[k] = x - x[j] * self.equations[i]
 
     def solve(self) -> AffineSubspace:
-        result_variables = []
         try:
             for i in range(len(self.equations)):
                 self.row_echelon_at_index(i)
-                result_variables.append(
-                    self.variables[self.equations[i].first_non_zero]
-                )
             independent_equations = self.equations
         except EndOfEquations as le:
             independent_equations = self.equations[:le.last_index]
-        result_subspace = []
-        result_offset_mapping = {}
-        free_variables = list(filter(
-            lambda x: x not in result_variables,
-            self.variables
-        ))
-        for n, eq in enumerate(independent_equations):
-            m = eq.first_non_zero
-            result_offset_mapping[self.variables[m]] = eq.value / eq[m]
-            new_subspace_row = []
-            for i, var, c in eq:
-                if var in free_variables:
-                    new_subspace_row.append(-c)
-            result_subspace.append(new_subspace_row)
-        result_offset = Point(result_offset_mapping, result_variables)
-        return AffineSubspace(
-            result_offset,
-            LinearSubspace.of(
-                result_offset.variable_list,
-                free_variables,
-                result_subspace,
-            )
-        )
+        return AffineSubspace(LinearSystem(*independent_equations))
 
 
 class InconsistentLinearSystem(Exception):

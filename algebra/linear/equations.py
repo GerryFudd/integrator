@@ -96,19 +96,32 @@ class MultiDimensionalEquation(Vector):
     def value(self):
         return self.coefficients[-1]
 
+    @property
+    def non_zero_count(self):
+        return len(list(filter(lambda x: x != 0, self.coefficients[:-1])))
+
+    def __normalized_coefficients(self):
+        divisor = 0
+        sorted_vars = sorted(self.variables)
+        for v in sorted_vars:
+            divisor = self.val(v)
+            if divisor != 0:
+                return list(filter(
+                    lambda x: x[1] != 0,
+                    map(lambda x: (x, self.val(x) / divisor), sorted_vars)),
+                ) + [(None, self.value / divisor)]
+
+        return []
+
     def __eq__(self, other):
         if not isinstance(other, MultiDimensionalEquation):
             return False
 
-        return all([
-            self.val(v) * other.value == other.val(v) * self.value
-            for v in set(self.variables + other.variables)
-        ])
+        return self.__normalized_coefficients() == other.__normalized_coefficients()
 
     def __hash__(self):
         return hash((
-            *self.variables,
-            *map(lambda x: x / self.value, self.coefficients),
+            *self.__normalized_coefficients(),
             'MultiDimensionalEquation',
         ))
 
@@ -116,6 +129,8 @@ class MultiDimensionalEquation(Vector):
         return item in self.variables
 
     def val(self, item):
+        if item not in self.lookup:
+            return RationalNumber()
         return self.coefficients[self.lookup[item]]
 
     def of_vector(self, base_vector: Vector):
@@ -125,6 +140,15 @@ class MultiDimensionalEquation(Vector):
         return MultiDimensionalEquation(
             new_mapping, base_vector[-1], self.variables
         )
+
+    def with_variables(self, variables: list[str]):
+        result_mapping = {}
+        result_variables = variables.copy()
+        for v in set(self.variables + variables):
+            result_mapping[v] = self.val(v)
+            if v not in result_variables:
+                result_variables.append(v)
+        return MultiDimensionalEquation(result_mapping, self.value, variables)
 
     def __add__(self, other):
         if not isinstance(other, MultiDimensionalEquation) \
