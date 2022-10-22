@@ -99,12 +99,6 @@ class PSquareSide:
 
     @staticmethod
     def right(p: int, *mappings: tuple[dict[tuple[int, int], Numeric], Numeric]):
-        mappings = []
-        move_direction = Direction.down()
-        current_coord = (0, p-1)
-        while len(mappings) < p:
-            current_coord = move_direction.move(current_coord)
-            mappings.append(default_point_mapping(current_coord))
         return PSquareSide(p, Direction.right(), *mappings)
 
     def __init__(self, p: int, direction: Direction, *mappings: tuple[dict[tuple[int, int], Numeric], Numeric]):
@@ -123,25 +117,12 @@ class PSquareSide:
 
         return new_mapping, value
 
-    def is_known(self) -> bool:
-        return all([len(m.keys()) == 0 for m, _ in self.mappings])
-
-    def known_values(self) -> list[Numeric]:
-        result = []
-        for m, v in self.mappings:
-            if len(m) > 0:
-                raise NotEnoughInformation
-            result.append(v)
-        return result
-
 
 class PSquareSeed:
     @staticmethod
     def first_square(p: int):
         return PSquareSeed(
             p,
-            left_seed=PSquareSide.zero(p, Direction.right()),
-            top_seed=PSquareSide.zero(p, Direction.down()),
             start_vals={(0, 0): 1}
         )
 
@@ -149,7 +130,7 @@ class PSquareSeed:
         self, p: int,
         left_seed: PSquareSide = None,
         top_seed: PSquareSide = None,
-        start_vals: dict[tuple[int,int], Numeric] = None,
+        start_vals: dict[tuple[int, int], Numeric] = None,
         is_terminus: bool = False,
     ):
         self.p = p
@@ -274,10 +255,10 @@ def p_square(seed: PSquareSeed) -> PSquareResult:
                 right_mappings.append(({coordinates: 1}, value))
         return PSquareResult(
             seed.p,
-            left=PSquareSide(seed.p, Direction.left(), *left_mappings),
-            right=PSquareSide(seed.p, Direction.right(), *right_mappings),
-            top=PSquareSide(seed.p, Direction.up(), *top_mappings),
-            bottom=PSquareSide(seed.p, Direction.down(), *bottom_mappings),
+            left=PSquareSide.left(seed.p, *left_mappings),
+            right=PSquareSide.right(seed.p, *right_mappings),
+            top=PSquareSide.top(seed.p, *top_mappings),
+            bottom=PSquareSide.bottom(seed.p, *bottom_mappings),
             known_values=solved_linear_system.variable_mapping,
             additional_values=additional_values
         )
@@ -312,10 +293,10 @@ def p_square(seed: PSquareSeed) -> PSquareResult:
 
     return PSquareResult(
         seed.p,
-        left=PSquareSide(seed.p, Direction.left(), *map(lambda k: left_side_mappings[k], sorted(left_side_mappings.keys()))),
-        top=PSquareSide(seed.p, Direction.up(), *map(lambda k: top_side_mappings[k], sorted(top_side_mappings.keys()))),
-        bottom=PSquareSide(seed.p, Direction.down(), *map(lambda k: bottom_side_mappings[k], sorted(bottom_side_mappings.keys()))),
-        right=PSquareSide(seed.p, Direction.right(), *map(lambda k: right_side_mappings[k], sorted(right_side_mappings.keys()))),
+        left=PSquareSide.left(seed.p, *map(lambda k: left_side_mappings[k], sorted(left_side_mappings.keys()))),
+        top=PSquareSide.top(seed.p, *map(lambda k: top_side_mappings[k], sorted(top_side_mappings.keys()))),
+        bottom=PSquareSide.bottom(seed.p, *map(lambda k: bottom_side_mappings[k], sorted(bottom_side_mappings.keys()))),
+        right=PSquareSide.right(seed.p, *map(lambda k: right_side_mappings[k], sorted(right_side_mappings.keys()))),
         known_values=known_values
     )
 
@@ -324,12 +305,12 @@ def solve_full_system(p: int):
     overall_result = []
     current_row = [p_square(PSquareSeed.first_square(p))]
     while len(current_row) < p-1:
-        current_row.append(p_square(PSquareSeed(p, left_seed=PSquareSide.zero(p, Direction.right()), top_seed=current_row[-1].bottom, start_vals={})))
+        current_row.append(p_square(PSquareSeed(p, top_seed=current_row[-1].bottom, start_vals={})))
 
-    current_row.append(p_square(PSquareSeed(p, left_seed=PSquareSide.zero(p, Direction.right()), top_seed=current_row[-1].bottom, start_vals={}, is_terminus=True)))
+    current_row.append(p_square(PSquareSeed(p, top_seed=current_row[-1].bottom, start_vals={}, is_terminus=True)))
     for n in range(1, p-1):
         current_row[n] = p_square(PSquareSeed(
-            p, left_seed=PSquareSide.zero(p, Direction.right()), top_seed=current_row[n - 1].bottom, start_vals={(0, 0): current_row[-1].additional_values[(-p * (p - n - 1), 0)]},
+            p, top_seed=current_row[n - 1].bottom, start_vals={(0, 0): current_row[-1].additional_values[(-p * (p - n - 1), 0)]},
         ))
     overall_result.append(current_row)
 
@@ -342,7 +323,7 @@ def solve_full_system(p: int):
             for n in range(p):
                 for m in range(p):
                     current_start_vals[(n, m)] = source_vals[m][n]
-            top_seed = current_row[-1].bottom if current_row else PSquareSide.zero(p, Direction.down())
+            top_seed = current_row[-1].bottom if current_row else None
             current_row.append(p_square(PSquareSeed(
                 p, left_seed=overall_result[-1][len(current_row)].right,
                 top_seed=top_seed, start_vals=current_start_vals
