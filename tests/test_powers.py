@@ -1,11 +1,11 @@
-from algebra.linear.powers import PSquareSideSeed, p_square, \
+from algebra.linear.powers import PSquareSide, p_square, \
     PSquareSeed, Direction, solve_full_system
 from algebra.linear.subspace import Point
 
 
 def test_new_p_square():
     result = p_square(PSquareSeed(
-        4, left_seed=PSquareSideSeed.zero(4, Direction.right()), top_seed=PSquareSideSeed.zero(4, Direction.down()),
+        4, left_seed=PSquareSide.zero(4, Direction.right()), top_seed=PSquareSide.zero(4, Direction.down()),
         start_vals={(0, 0): 1}))
     assert result.get_values() == [
         [1, -1, 1, -1],

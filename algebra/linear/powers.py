@@ -10,22 +10,21 @@ class NotEnoughInformation(Exception):
 class Direction:
     @staticmethod
     def down():
-        return Direction('down', 0, 1)
+        return Direction(0, 1)
 
     @staticmethod
     def up():
-        return Direction('up', 0, -1)
+        return Direction(0, -1)
 
     @staticmethod
     def right():
-        return Direction('right', 1, 1)
+        return Direction(1, 1)
 
     @staticmethod
     def left():
-        return Direction('left', 1, -1)
+        return Direction(1, -1)
 
-    def __init__(self, name: str, coordinate: int, orientation: int):
-        self.name = name
+    def __init__(self, coordinate: int, orientation: int):
         self.coordinate = coordinate
         self.orientation = orientation
 
@@ -33,21 +32,34 @@ class Direction:
         return self.name
 
     @property
+    def name(self):
+        if self.coordinate == 0:
+            if self.orientation > 0:
+                return 'down'
+            return 'up'
+        if self.orientation > 0:
+            return 'right'
+        return 'left'
+
+    @property
     def symbol(self):
-        if self.name == 'up':
+        if self.coordinate == 0:
+            if self.orientation > 0:
+                return 'V'
             return '^'
-        if self.name == 'down':
-            return 'V'
-        if self.name == 'left':
-            return '<'
-        if self.name == 'right':
+        if self.orientation > 0:
             return '>'
-        raise NotImplementedError
+        return '<'
 
     def move(self, point: tuple[int, int], distance: int = 1):
         if self.coordinate == 0:
             return point[0] + self.orientation * distance, point[1]
         return point[0], point[1] + self.orientation * distance
+
+    def move_perp(self, point: tuple[int, int], distance: int = 1):
+        if self.coordinate == 0:
+            return point[0], point[1] + distance
+        return point[0] + distance, point[1]
 
 
 def default_point_mapping(point: tuple[int, int]):
@@ -64,81 +76,36 @@ def or_else(value, default):
     return value
 
 
-def get_directional_mapping(
-    x: int, y: int, base_mapping: tuple[dict[tuple[int, int], Numeric], Numeric],
-    side_direction: Direction, neighbor_direction: Direction,
-):
-    # base_mapping: u+factor*matching_key=value -> factor*matching_key=value-u
-    # identity: neighbor+self+matching_key=0 -> factor*matching_key=-factor*neighbor-factor*self
-    # factor*neighbor+factor*self-u=-value
-    new_mapping = {}
-    matching_key = side_direction.move((x, y))
-    factor = 0
-    for key, coefficient in base_mapping[0].items():
-        if key == matching_key:
-            factor = coefficient
-        else:
-            new_mapping[key] = -coefficient
-    if factor == 0:
-        return {neighbor_direction.move((x, y)): 1, (x, y): 1}, 0
-    new_mapping[neighbor_direction.move((x, y))] = factor
-    new_mapping[(x, y)] = factor
-    return new_mapping, -base_mapping[1]
-
-
-class PSquareSideSeed:
+class PSquareSide:
     @staticmethod
     def zero(p: int, direction: Direction):
-        if direction.name in ('left', 'top'):
+        if direction.orientation < 0:
             start = (0, 0)
-            move_direction = Direction.down() if direction.name == 'left' else Direction.right()
-        elif direction.name == 'right':
-            start = (0, p-1)
-            move_direction = Direction.down()
         else:
-            start = (p-1, 0)
-            move_direction = Direction.right()
-        return PSquareSideSeed(p, direction, *map(lambda n: ({move_direction.move(start, n): 1}, 0), range(p)))
+            start = direction.move_perp((0, 0), p-1)
+        return PSquareSide(p, direction, *map(lambda n: ({direction.move_perp(start, n): 1}, 0), range(p)))
 
     @staticmethod
-    def left(p: int):
-        mappings = [({}, 0)]
-        move_direction = Direction.down()
-        current_coord = (0, 0)
-        while len(mappings) < p:
-            current_coord = move_direction.move(current_coord)
-            mappings.append(default_point_mapping(current_coord))
-        return PSquareSideSeed(p, Direction.left(), *mappings)
+    def left(p: int, *mappings: tuple[dict[tuple[int, int], Numeric], Numeric]):
+        return PSquareSide(p, Direction.left(), *mappings)
 
     @staticmethod
-    def top(p: int):
-        mappings = [({}, 0)]
-        move_direction = Direction.right()
-        current_coord = (0, 0)
-        while len(mappings) < p:
-            current_coord = move_direction.move(current_coord)
-            mappings.append(default_point_mapping(current_coord))
-        return PSquareSideSeed(p, Direction.up(), *mappings)
+    def top(p: int, *mappings: tuple[dict[tuple[int, int], Numeric], Numeric]):
+        return PSquareSide(p, Direction.up(), *mappings)
 
     @staticmethod
-    def bottom(p: int):
-        mappings = []
-        move_direction = Direction.right()
-        current_coord = (p-1, -1)
-        while len(mappings) < p:
-            current_coord = move_direction.move(current_coord)
-            mappings.append(default_point_mapping(current_coord))
-        return PSquareSideSeed(p, Direction.down(), *mappings)
+    def bottom(p: int, *mappings: tuple[dict[tuple[int, int], Numeric], Numeric]):
+        return PSquareSide(p, Direction.down(), *mappings)
 
     @staticmethod
-    def right(p: int):
+    def right(p: int, *mappings: tuple[dict[tuple[int, int], Numeric], Numeric]):
         mappings = []
         move_direction = Direction.down()
         current_coord = (0, p-1)
         while len(mappings) < p:
             current_coord = move_direction.move(current_coord)
             mappings.append(default_point_mapping(current_coord))
-        return PSquareSideSeed(p, Direction.right(), *mappings)
+        return PSquareSide(p, Direction.right(), *mappings)
 
     def __init__(self, p: int, direction: Direction, *mappings: tuple[dict[tuple[int, int], Numeric], Numeric]):
         self.p = p
@@ -173,48 +140,68 @@ class PSquareSeed:
     def first_square(p: int):
         return PSquareSeed(
             p,
-            left_seed=PSquareSideSeed.zero(p, Direction.right()),
-            top_seed=PSquareSideSeed.zero(p, Direction.down()),
+            left_seed=PSquareSide.zero(p, Direction.right()),
+            top_seed=PSquareSide.zero(p, Direction.down()),
             start_vals={(0, 0): 1}
         )
 
     def __init__(
         self, p: int,
-        left_seed: PSquareSideSeed = None,
-        top_seed: PSquareSideSeed = None,
+        left_seed: PSquareSide = None,
+        top_seed: PSquareSide = None,
         start_vals: dict[tuple[int,int], Numeric] = None,
         is_terminus: bool = False,
     ):
         self.p = p
-        self.left_seed = or_else(left_seed, PSquareSideSeed.zero(p, Direction.right()))
-        self.top_seed = or_else(top_seed, PSquareSideSeed.zero(p, Direction.down()))
+        self.left_seed = or_else(left_seed, PSquareSide.zero(p, Direction.right()))
+        self.top_seed = or_else(top_seed, PSquareSide.zero(p, Direction.down()))
         self.start_vals = or_else(start_vals, {})
         self.is_terminus = is_terminus
 
     def get_equation_mapping(self, x: int, y: int) -> tuple[dict[tuple[int, int], Numeric], Numeric] | None:
         if x == 0:
-            return get_directional_mapping(x, y, self.top_seed[y], Direction.up(), Direction.left())
-        if y == 0:
-            return get_directional_mapping(x, y, self.left_seed[x], Direction.left(), Direction.up())
-        return default_point_mapping((x, y))
+            side = self.top_seed
+            base_mapping = side[y]
+        elif y == 0:
+            side = self.left_seed
+            base_mapping = side[x]
+        else:
+            return default_point_mapping((x, y))
+        # base_mapping: u+factor*matching_key=value -> factor*matching_key=value-u
+        # identity: neighbor+self+matching_key=0 -> factor*matching_key=-factor*neighbor-factor*self
+        # factor*neighbor+factor*self-u=-value
+        new_mapping = {}
+        matching_key = side.direction.move((x, y), -1)
+        neighbor_key = side.direction.move_perp((x, y), -1)
+        factor = 0
+        for key, coefficient in base_mapping[0].items():
+            if key == matching_key:
+                factor = coefficient
+            else:
+                new_mapping[key] = -coefficient
+        if factor == 0:
+            return {neighbor_key: 1, (x, y): 1}, 0
+        new_mapping[neighbor_key] = factor
+        new_mapping[(x, y)] = factor
+        return new_mapping, -base_mapping[1]
 
 
 class PSquareResult:
     def __init__(
         self,
         p: int,
-        left: PSquareSideSeed = None,
-        top: PSquareSideSeed = None,
-        right: PSquareSideSeed = None,
-        bottom: PSquareSideSeed = None,
+        left: PSquareSide,
+        top: PSquareSide,
+        right: PSquareSide,
+        bottom: PSquareSide,
         known_values: dict[tuple[int, int], Numeric] = None,
         additional_values: dict[tuple[int, int], Numeric] = None,
     ):
         self.p = p
-        self.left = or_else(left, PSquareSideSeed.left(p))
-        self.top = or_else(top, PSquareSideSeed.top(p))
-        self.right = or_else(right, PSquareSideSeed.right(p))
-        self.bottom = or_else(bottom, PSquareSideSeed.bottom(p))
+        self.left = left
+        self.top = top
+        self.right = right
+        self.bottom = bottom
         self.known_values = or_else(known_values, {})
         self.additional_values = or_else(additional_values, {})
 
@@ -287,10 +274,10 @@ def p_square(seed: PSquareSeed) -> PSquareResult:
                 right_mappings.append(({coordinates: 1}, value))
         return PSquareResult(
             seed.p,
-            left=PSquareSideSeed(seed.p, Direction.left(), *left_mappings),
-            right=PSquareSideSeed(seed.p, Direction.right(), *right_mappings),
-            top=PSquareSideSeed(seed.p, Direction.up(), *top_mappings),
-            bottom=PSquareSideSeed(seed.p, Direction.down(), *bottom_mappings),
+            left=PSquareSide(seed.p, Direction.left(), *left_mappings),
+            right=PSquareSide(seed.p, Direction.right(), *right_mappings),
+            top=PSquareSide(seed.p, Direction.up(), *top_mappings),
+            bottom=PSquareSide(seed.p, Direction.down(), *bottom_mappings),
             known_values=solved_linear_system.variable_mapping,
             additional_values=additional_values
         )
@@ -325,10 +312,10 @@ def p_square(seed: PSquareSeed) -> PSquareResult:
 
     return PSquareResult(
         seed.p,
-        left=PSquareSideSeed(seed.p, Direction.left(), *map(lambda k: left_side_mappings[k], sorted(left_side_mappings.keys()))),
-        top=PSquareSideSeed(seed.p, Direction.up(), *map(lambda k: top_side_mappings[k], sorted(top_side_mappings.keys()))),
-        bottom=PSquareSideSeed(seed.p, Direction.down(), *map(lambda k: bottom_side_mappings[k], sorted(bottom_side_mappings.keys()))),
-        right=PSquareSideSeed(seed.p, Direction.right(), *map(lambda k: right_side_mappings[k], sorted(right_side_mappings.keys()))),
+        left=PSquareSide(seed.p, Direction.left(), *map(lambda k: left_side_mappings[k], sorted(left_side_mappings.keys()))),
+        top=PSquareSide(seed.p, Direction.up(), *map(lambda k: top_side_mappings[k], sorted(top_side_mappings.keys()))),
+        bottom=PSquareSide(seed.p, Direction.down(), *map(lambda k: bottom_side_mappings[k], sorted(bottom_side_mappings.keys()))),
+        right=PSquareSide(seed.p, Direction.right(), *map(lambda k: right_side_mappings[k], sorted(right_side_mappings.keys()))),
         known_values=known_values
     )
 
@@ -337,12 +324,12 @@ def solve_full_system(p: int):
     overall_result = []
     current_row = [p_square(PSquareSeed.first_square(p))]
     while len(current_row) < p-1:
-        current_row.append(p_square(PSquareSeed(p, left_seed=PSquareSideSeed.zero(p, Direction.right()), top_seed=current_row[-1].bottom, start_vals={})))
+        current_row.append(p_square(PSquareSeed(p, left_seed=PSquareSide.zero(p, Direction.right()), top_seed=current_row[-1].bottom, start_vals={})))
 
-    current_row.append(p_square(PSquareSeed(p, left_seed=PSquareSideSeed.zero(p, Direction.right()), top_seed=current_row[-1].bottom, start_vals={}, is_terminus=True)))
+    current_row.append(p_square(PSquareSeed(p, left_seed=PSquareSide.zero(p, Direction.right()), top_seed=current_row[-1].bottom, start_vals={}, is_terminus=True)))
     for n in range(1, p-1):
         current_row[n] = p_square(PSquareSeed(
-            p, left_seed=PSquareSideSeed.zero(p, Direction.right()), top_seed=current_row[n-1].bottom, start_vals={(0, 0): current_row[-1].additional_values[(-p * (p - n - 1), 0)]},
+            p, left_seed=PSquareSide.zero(p, Direction.right()), top_seed=current_row[n - 1].bottom, start_vals={(0, 0): current_row[-1].additional_values[(-p * (p - n - 1), 0)]},
         ))
     overall_result.append(current_row)
 
@@ -355,7 +342,7 @@ def solve_full_system(p: int):
             for n in range(p):
                 for m in range(p):
                     current_start_vals[(n, m)] = source_vals[m][n]
-            top_seed = current_row[-1].bottom if current_row else PSquareSideSeed.zero(p, Direction.down())
+            top_seed = current_row[-1].bottom if current_row else PSquareSide.zero(p, Direction.down())
             current_row.append(p_square(PSquareSeed(
                 p, left_seed=overall_result[-1][len(current_row)].right,
                 top_seed=top_seed, start_vals=current_start_vals
