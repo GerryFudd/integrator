@@ -185,19 +185,24 @@ class LinearSystem(Generic[IndexType]):
             x = self.equations[k]
             self.equations[k] = x - x[j] * self.equations[i]
 
-    def solve(self) -> LinearSystem | Point:
+    def solve(self) -> LinearSystem:
         try:
             for i in range(len(self.equations)):
                 self.row_echelon_at_index(i)
             independent_equations = self.equations
         except EndOfEquations as le:
             independent_equations = self.equations[:le.last_index]
-        if len(independent_equations) == len(self.variables):
-            result = Point.builder()
-            for i, eq in enumerate(independent_equations):
-                result.map(self.variables[i], eq.value)
-            return result.build()
         return LinearSystem(*independent_equations)
+
+    def as_point(self) -> Point | None:
+        if len(self.equations) < len(self.variables):
+            return None
+        result = Point.builder()
+        for i, eq in enumerate(self.equations):
+            if eq[i] != 1:
+                return None
+            result.map(self.variables[i], eq.value)
+        return result.build()
 
 
 class InconsistentLinearSystem(Exception):

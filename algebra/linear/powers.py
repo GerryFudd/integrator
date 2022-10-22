@@ -83,7 +83,7 @@ class PSquareSide:
             start = (0, 0)
         else:
             start = direction.move_perp((0, 0), p-1)
-        return PSquareSide(p, direction, *map(lambda n: ({direction.move_perp(start, n): 1}, 0), range(p)))
+        return PSquareSide(p, direction, *map(lambda n: ({direction.move(start, n): 1}, 0), range(p)))
 
     @staticmethod
     def left(p: int, *mappings: tuple[dict[tuple[int, int], Numeric], Numeric]):
@@ -171,41 +171,121 @@ class PSquareResult:
     def __init__(
         self,
         p: int,
-        left: PSquareSide,
-        top: PSquareSide,
-        right: PSquareSide,
-        bottom: PSquareSide,
-        known_values: dict[tuple[int, int], Numeric] = None,
-        additional_values: dict[tuple[int, int], Numeric] = None,
+        linear_system: LinearSystem[tuple[int, int]]
     ):
         self.p = p
-        self.left = left
-        self.top = top
-        self.right = right
-        self.bottom = bottom
-        self.known_values = or_else(known_values, {})
-        self.additional_values = or_else(additional_values, {})
+        self.linear_system: LinearSystem[tuple[int, int]] = linear_system
+        self.__known_values = None
 
+        # additional_values: dict[tuple[int, int], Numeric] = None,
     def __str__(self):
-        return f'{self.known_values} {self.left} {self.top} {self.right} {self.bottom}'
+        return str(self.linear_system)
 
     def __repr__(self):
-        return f'PSquareResult(p={self.p},left={self.left},top={self.top},bottom={self.bottom},right={self.right},' \
-               f'known_values={self.known_values})'
+        return f'PSquareResult(p={self.p},linear_system={self.linear_system})'
+
+    @staticmethod
+    def extract_mapping(eq: MultiDimensionalEquation) -> tuple[dict[tuple[int, int], Numeric], Numeric]:
+        result = {}
+        for m, position, coefficient in eq:
+            if coefficient == 0:
+                continue
+            result[position] = coefficient
+        return result, eq.value
+
+    @property
+    def right(self):
+        mappings = []
+        while len(mappings) < self.p:
+            mappings.append(({}, 0))
+        for _, eq in self.linear_system:
+            first_non_zero = eq.first_non_zero
+            if first_non_zero < len(self.linear_system.variables):
+                x, y = self.linear_system.variables[first_non_zero]
+                if y == self.p - 1:
+                    mappings[x] = self.extract_mapping(eq)
+        return PSquareSide.right(self.p, *mappings)
+
+    @property
+    def bottom(self):
+        mappings = []
+        while len(mappings) < self.p:
+            mappings.append(({}, 0))
+        for _, eq in self.linear_system:
+            first_non_zero = eq.first_non_zero
+            if first_non_zero < len(self.linear_system.variables):
+                x, y = self.linear_system.variables[first_non_zero]
+                if x == self.p - 1:
+                    mappings[y] = self.extract_mapping(eq)
+        return PSquareSide.bottom(self.p, *mappings)
+
+    @staticmethod
+    def extract_known(eq: MultiDimensionalEquation[tuple[int, int]]) -> tuple[tuple[int, int] | None, Numeric | None]:
+        coordinates: tuple[int, int] | None = None
+        coefficient: Numeric | None = None
+        for _, coord, coeff in eq:
+            if coeff == 0:
+                continue
+            if coordinates is None:
+                coordinates = coord
+                coefficient = coeff
+                continue
+            return None, None
+        return coordinates, coefficient
+
+    @property
+    def additional_values(self) -> dict[tuple[int, int], Numeric]:
+        result = {}
+        for _, eq in self.linear_system:
+            coordinates, coefficient = self.extract_known(eq)
+            if coordinates is not None and (coordinates[0] < 0 or coordinates[1] < 0):
+                result[coordinates] = eq.value
+                if coefficient != 1:
+                    result[coordinates] /= coefficient
+
+        return result
+
+    @property
+    def known_values(self) -> dict[tuple[int, int], Numeric]:
+        if self.__known_values is not None:
+            return self.__known_values
+
+        as_point = self.linear_system.as_point()
+        if as_point is not None:
+            self.__known_values = as_point.variable_mapping
+            return self.__known_values
+        self.__known_values = {}
+        for _, eq in self.linear_system:
+            coordinates, coefficient = self.extract_known(eq)
+            if coordinates is not None:
+                self.__known_values[coordinates] = eq.value
+                if coefficient != 1:
+                    self.__known_values[coordinates] /= coefficient
+        return self.__known_values
 
     def get_values(self) -> list[list[Numeric]]:
-        if len(self.known_values) < self.p**2:
+        known_values = self.known_values
+        if len(known_values) < self.p**2:
             raise NotEnoughInformation
         result = []
         while len(result) < self.p:
             row = []
             while len(row) < self.p:
                 new_point = (len(result), len(row))
-                if new_point not in self.known_values:
+                if new_point not in known_values:
                     raise NotEnoughInformation
-                row.append(self.known_values[new_point])
+                row.append(known_values[new_point])
             result.append(row)
         return result
+
+    def with_values(self, *values: tuple[tuple[int, int], Numeric]):
+        return PSquareResult(
+            self.p,
+            LinearSystem(
+                *self.linear_system.equations,
+                *map(lambda x: MultiDimensionalEquation({x[0]: 1}, x[1], self.linear_system.variables), values),
+            ).solve()
+        )
 
 
 def p_square(seed: PSquareSeed) -> PSquareResult:
@@ -234,70 +314,9 @@ def p_square(seed: PSquareSeed) -> PSquareResult:
             end_variables.append((a, b))
     linear_system = linear_system.with_vars(variables + sorted(end_variables, reverse=True))
 
-    solved_linear_system = linear_system.solve()
-    if isinstance(solved_linear_system, Point):
-        additional_values = {}
-        left_mappings = []
-        right_mappings = []
-        top_mappings = []
-        bottom_mappings = []
-        for n, coordinates, value in solved_linear_system:
-            if coordinates[0] < 0 or coordinates[0] >= seed.p or coordinates[1] < 0 or coordinates[1] >= seed.p:
-                additional_values[coordinates] = value
-                continue
-            if coordinates[0] == 0:
-                top_mappings.append(({coordinates: 1}, value))
-            elif coordinates[0] == seed.p-1:
-                bottom_mappings.append(({coordinates: 1}, value))
-            if coordinates[1] == 0:
-                left_mappings.append(({coordinates: 1}, value))
-            elif coordinates[1] == seed.p-1:
-                right_mappings.append(({coordinates: 1}, value))
-        return PSquareResult(
-            seed.p,
-            left=PSquareSide.left(seed.p, *left_mappings),
-            right=PSquareSide.right(seed.p, *right_mappings),
-            top=PSquareSide.top(seed.p, *top_mappings),
-            bottom=PSquareSide.bottom(seed.p, *bottom_mappings),
-            known_values=solved_linear_system.variable_mapping,
-            additional_values=additional_values
-        )
-
-    left_side_mappings = {0: ({}, 0)}
-    top_side_mappings = {0: ({}, 0)}
-    bottom_side_mappings = {}
-    right_side_mappings = {}
-    known_values = {}
-
-    for n, eq in solved_linear_system:
-        new_mapping = {}
-        first_non_zero = None
-        for m, position, coefficient in eq:
-            if coefficient == 0:
-                continue
-            if first_non_zero is None:
-                first_non_zero = position
-            new_mapping[position] = coefficient
-        if len(new_mapping) == 1:
-            for key, coeff in new_mapping.items():
-                known_values[key] = eq.value / coeff
-        if first_non_zero[0] == 0:
-            top_side_mappings[first_non_zero[1]] = (new_mapping, eq.value)
-        elif first_non_zero[0] == seed.p-1:
-            bottom_side_mappings[first_non_zero[1]] = (new_mapping, eq.value)
-
-        if first_non_zero[1] == 0:
-            left_side_mappings[first_non_zero[0]] = (new_mapping, eq.value)
-        elif first_non_zero[1] == seed.p-1:
-            right_side_mappings[first_non_zero[0]] = (new_mapping, eq.value)
-
     return PSquareResult(
         seed.p,
-        left=PSquareSide.left(seed.p, *map(lambda k: left_side_mappings[k], sorted(left_side_mappings.keys()))),
-        top=PSquareSide.top(seed.p, *map(lambda k: top_side_mappings[k], sorted(top_side_mappings.keys()))),
-        bottom=PSquareSide.bottom(seed.p, *map(lambda k: bottom_side_mappings[k], sorted(bottom_side_mappings.keys()))),
-        right=PSquareSide.right(seed.p, *map(lambda k: right_side_mappings[k], sorted(right_side_mappings.keys()))),
-        known_values=known_values
+        linear_system.solve()
     )
 
 
@@ -351,12 +370,20 @@ def solve_full_system(p: int):
             is_terminus=True
         )))
         additional_values = current_row[-1].additional_values
-        for key in sorted(additional_values.keys()):
-            n = len(current_row) - 1 + key[1]//p
-            current_row[n] = p_square(PSquareSeed(
-                p, left_seed=get_left_seed(current_row, n), top_seed=get_top_seed(overall_result, n),
-                start_vals={(0, 0): additional_values[key]},
-            ))
+        d = 1
+        while len(additional_values) > 0:
+            n = len(current_row) - d - 1
+            new_values = {}
+            mapped_values = []
+            for key, val in additional_values.items():
+                adjusted_key = (0, key[1] + p * d)
+                mapped_values.append((adjusted_key, val))
+                if adjusted_key[1] != 0:
+                    new_values[key] = val
+            current_row[n] = current_row[n].with_values(*mapped_values)
+            d += 1
+            additional_values = new_values
+
         overall_result.append(current_row)
     result = Point.builder()
     for n in range(p**2):

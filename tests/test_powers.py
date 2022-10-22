@@ -14,24 +14,6 @@ def test_new_p_square():
         [-1, 4, -10, 20]
     ]
 
-    # [1, -1, 1, -1]
-    for mapping in [
-        ({(0, 0): 1},  1),
-        ({(0, 1): 1}, -1),
-        ({(0, 2): 1},  1),
-        ({(0, 3): 1}, -1),
-    ]:
-        assert mapping in result.top.mappings
-
-    # [1, -1, 1, -1]
-    for mapping in [
-        ({(0, 0): 1}, 1),
-        ({(1, 0):  1}, -1),
-        ({(2, 0): 1}, 1),
-        ({(3, 0): 1}, -1),
-    ]:
-        assert mapping in result.left.mappings
-
     # [-1, 4, -10, 20]
     for mapping in [
         ({(0, 3): 1},  -1),
