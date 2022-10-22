@@ -1,6 +1,6 @@
 from __future__ import annotations
 from abc import abstractmethod
-from typing import List
+from typing import List, TypeVar, Generic
 
 from algebra.expression import PolynomialExpression, SolutionType
 from algebra.linear.utils import IndexedMapIterator
@@ -60,10 +60,17 @@ class LinearInequality(LinearSolvable[Interval]):
         return solve_linear_inequality(self.boundaries()[0], self.condition)
 
 
-class MultiDimensionalEquation(Vector):
+IndexType = TypeVar('IndexType')
+
+
+class MultiDimensionalEquation(Vector, Generic[IndexType]):
+    @staticmethod
+    def of_mapping(mapping: dict[IndexType, Numeric], val: Numeric) -> MultiDimensionalEquation[IndexType]:
+        return MultiDimensionalEquation(mapping, val, sorted(mapping.keys()))
+
     def __init__(
-        self, variable_mapping: dict[str, Numeric], value: Numeric,
-        variables: list[str],
+        self, variable_mapping: dict[IndexType, Numeric], value: Numeric,
+        variables: list[IndexType],
     ):
         self.variables = variables
         Vector.__init__(self, *map(
@@ -73,7 +80,7 @@ class MultiDimensionalEquation(Vector):
             self.variables
         ), value)
         self.lookup = {}
-        for i, val in enumerate(self.variables):
+        for i, val in enumerate(variables):
             self.lookup[val] = i
 
     def __str__(self):
@@ -95,6 +102,20 @@ class MultiDimensionalEquation(Vector):
     @property
     def value(self):
         return self.coefficients[-1]
+
+    @property
+    def mapping(self):
+        result = {}
+        for v in self.variables:
+            result[v] = self.val(v)
+        return result
+
+    def append_vars(self, variables: list[IndexType]):
+        for v in variables:
+            if v not in self.variables:
+                self.lookup[v] = len(self.variables)
+                self.variables.append(v)
+        self.coefficients = self.coefficients[:-1] + [0]*(len(self.variables)-len(self.coefficients)+1) + [self.value]
 
     @property
     def non_zero_count(self):
@@ -141,7 +162,7 @@ class MultiDimensionalEquation(Vector):
             new_mapping, base_vector[-1], self.variables
         )
 
-    def with_variables(self, variables: list[str]):
+    def with_variables(self, variables: list[IndexType]):
         result_mapping = {}
         result_variables = variables.copy()
         for v in set(self.variables + variables):
