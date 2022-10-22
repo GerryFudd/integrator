@@ -301,19 +301,24 @@ def p_square(seed: PSquareSeed) -> PSquareResult:
     )
 
 
+def get_left_seed(overall_result: list[list[PSquareResult]], n: int):
+    if not overall_result:
+        return None
+    return overall_result[-1][n].right
+
+
+def get_top_seed(current_row: list[PSquareResult], n: int = None):
+    if n is None:
+        if len(current_row) == 0:
+            return None
+        return current_row[-1].bottom
+    if n == 0:
+        return None
+    return current_row[n-1].bottom
+
+
 def solve_full_system(p: int):
     overall_result = []
-    current_row = [p_square(PSquareSeed.first_square(p))]
-    while len(current_row) < p-1:
-        current_row.append(p_square(PSquareSeed(p, top_seed=current_row[-1].bottom, start_vals={})))
-
-    current_row.append(p_square(PSquareSeed(p, top_seed=current_row[-1].bottom, start_vals={}, is_terminus=True)))
-    for n in range(1, p-1):
-        current_row[n] = p_square(PSquareSeed(
-            p, top_seed=current_row[n - 1].bottom, start_vals={(0, 0): current_row[-1].additional_values[(-p * (p - n - 1), 0)]},
-        ))
-    overall_result.append(current_row)
-
     while len(overall_result) < p:
         current_row = []
         while len(current_row) < min(len(overall_result), p-len(overall_result)):
@@ -323,27 +328,34 @@ def solve_full_system(p: int):
             for n in range(p):
                 for m in range(p):
                     current_start_vals[(n, m)] = source_vals[m][n]
-            top_seed = current_row[-1].bottom if current_row else None
+            top_seed = get_top_seed(current_row)
+            left_seed = get_left_seed(overall_result, len(current_row))
             current_row.append(p_square(PSquareSeed(
-                p, left_seed=overall_result[-1][len(current_row)].right,
-                top_seed=top_seed, start_vals=current_start_vals
+                p, left_seed=left_seed, top_seed=top_seed, start_vals=current_start_vals
             )))
         if len(current_row) + len(overall_result) == p:
             overall_result.append(current_row)
             continue
-        while len(current_row) < p - len(overall_result)-1:
+        while len(current_row) < p-len(overall_result)-1:
+            if not overall_result and not current_row:
+                current_row.append(p_square(PSquareSeed.first_square(p)))
+                continue
+            left_seed = get_left_seed(overall_result, len(current_row))
+            top_seed = get_top_seed(current_row)
             current_row.append(p_square(PSquareSeed(
-                p, left_seed=overall_result[-1][len(current_row)].right, top_seed=current_row[-1].bottom, start_vals={},
+                p, left_seed=left_seed, top_seed=top_seed,
             )))
+
         current_row.append(p_square(PSquareSeed(
-            p, left_seed=overall_result[-1][len(current_row)].right, top_seed=current_row[-1].bottom, start_vals={},
+            p, left_seed=get_left_seed(overall_result, len(current_row)), top_seed=get_top_seed(current_row),
             is_terminus=True
         )))
         additional_values = current_row[-1].additional_values
         for key in sorted(additional_values.keys()):
             n = len(current_row) - 1 + key[0]//p
             current_row[n] = p_square(PSquareSeed(
-                p, left_seed=overall_result[-1][n].right, top_seed=current_row[n-1].bottom, start_vals={(0, 0): additional_values[key]},
+                p, left_seed=get_left_seed(overall_result, n), top_seed=get_top_seed(current_row, n),
+                start_vals={(0, 0): additional_values[key]},
             ))
         overall_result.append(current_row)
     result = Point.builder()
