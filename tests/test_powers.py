@@ -1,36 +1,6 @@
-from algebra.linear.powers import PSquareSide, p_square, \
-    PSquareSeed, Direction, solve_full_system
+from algebra.linear.powers import solve_full_system
 from algebra.linear.subspace import Point
-
-
-def test_new_p_square():
-    result = p_square(PSquareSeed(
-        4, left_seed=PSquareSide.zero(4, Direction.right()), top_seed=PSquareSide.zero(4, Direction.down()),
-        start_vals={(0, 0): 1}))
-    assert result.get_values() == [
-        [1, -1, 1, -1],
-        [-1, 2, -3, 4],
-        [1, -3, 6, -10],
-        [-1, 4, -10, 20]
-    ]
-
-    # [-1, 4, -10, 20]
-    for mapping in [
-        ({(0, 3): 1},  -1),
-        ({(1, 3): 1},   4),
-        ({(2, 3): 1}, -10),
-        ({(3, 3): 1},  20),
-    ]:
-        assert mapping in result.right.mappings
-
-    # [-1, 4, -10, 20]
-    for mapping in [
-        ({(3, 0): 1},  -1),
-        ({(3, 1): 1},   4),
-        ({(3, 2): 1}, -10),
-        ({(3, 3): 1},  20),
-    ]:
-        assert mapping in result.bottom.mappings
+from algebra.linear.utils import TimingContext
 
 
 def check_solution(result: Point, p: int):
@@ -48,8 +18,14 @@ def check_solution(result: Point, p: int):
 
 
 def test_new_solve_full_system():
-    check_solution(solve_full_system(4), 4)
+    with TimingContext.get() as timing:
+        result = solve_full_system(4)
+    check_solution(result, 4)
+    print(timing.get_results())
 
 
 def test_with_five():
-    check_solution(solve_full_system(5), 5)
+    with TimingContext.get() as timing:
+        result = solve_full_system(5)
+    check_solution(result, 5)
+    print(timing.get_results())

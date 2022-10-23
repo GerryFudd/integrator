@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import Generic
 
 from algebra.linear.equations import MultiDimensionalEquation, IndexType
-from algebra.linear.utils import IndexedMapIterator
-from custom_numbers.types import Numeric
+from algebra.linear.utils import IndexedMapIterator, Profiler
+from custom_numbers.utils import gcd
 
 
 class PointBuilder(Generic[IndexType]):
@@ -17,7 +17,7 @@ class PointBuilder(Generic[IndexType]):
         if key not in self.list:
             self.list.append(key)
 
-    def map(self, key: IndexType, value: Numeric) -> PointBuilder:
+    def map(self, key: IndexType, value: int) -> PointBuilder:
         self[key] = value
         return self
 
@@ -32,7 +32,7 @@ class Point(Generic[IndexType]):
 
     def __init__(
         self,
-        variable_mapping: dict[IndexType, Numeric],
+        variable_mapping: dict[IndexType, int],
         variable_list: list[IndexType]
     ):
         self.variable_mapping = variable_mapping
@@ -132,7 +132,7 @@ class LinearSystem(Generic[IndexType]):
         result.sort_rows(0)
         return result
 
-    def merge_mapping(self, mapping: dict[IndexType, Numeric], val):
+    def merge_mapping(self, mapping: dict[IndexType, int], val):
         new_variables = sorted(mapping.keys())
         for eq in self.equations:
             eq.append_vars(new_variables)
@@ -178,20 +178,26 @@ class LinearSystem(Generic[IndexType]):
         if j > len(self.variables):
             raise EndOfEquations(i)
 
-        self.equations[i] = self.equations[i] / self.equations[i][j]
-        for k in range(len(self.equations)):
-            if i == k:
-                continue
-            x = self.equations[k]
-            self.equations[k] = x - x[j] * self.equations[i]
+        with Profiler('Zero out equations'):
+            for k in range(len(self.equations)):
+                if i == k:
+                    continue
+                if self.equations[k][j] == 0:
+                    continue
+                x = self.equations[k]
+                y = self.equations[i]
+                d = gcd(x[j], y[j])
+                with Profiler('Recalculate line'):
+                    self.equations[k] = (y[j]//d) * x + (-x[j]//d) * y
 
     def solve(self) -> LinearSystem:
-        try:
-            for i in range(len(self.equations)):
-                self.row_echelon_at_index(i)
-            independent_equations = self.equations
-        except EndOfEquations as le:
-            independent_equations = self.equations[:le.last_index]
+        with Profiler('Row echelon'):
+            try:
+                for i in range(len(self.equations)):
+                    self.row_echelon_at_index(i)
+                independent_equations = self.equations
+            except EndOfEquations as le:
+                independent_equations = self.equations[:le.last_index]
         return LinearSystem(*independent_equations)
 
     def as_point(self) -> Point | None:

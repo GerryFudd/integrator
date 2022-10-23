@@ -1,6 +1,5 @@
 from algebra.linear.equations import MultiDimensionalEquation
 from algebra.linear.subspace import LinearSystem, Point
-from custom_numbers.types import Numeric
 
 
 class NotEnoughInformation(Exception):
@@ -86,22 +85,22 @@ class PSquareSide:
         return PSquareSide(p, direction, *map(lambda n: ({direction.move(start, n): 1}, 0), range(p)))
 
     @staticmethod
-    def left(p: int, *mappings: tuple[dict[tuple[int, int], Numeric], Numeric]):
+    def left(p: int, *mappings: tuple[dict[tuple[int, int], int], int]):
         return PSquareSide(p, Direction.left(), *mappings)
 
     @staticmethod
-    def top(p: int, *mappings: tuple[dict[tuple[int, int], Numeric], Numeric]):
+    def top(p: int, *mappings: tuple[dict[tuple[int, int], int], int]):
         return PSquareSide(p, Direction.up(), *mappings)
 
     @staticmethod
-    def bottom(p: int, *mappings: tuple[dict[tuple[int, int], Numeric], Numeric]):
+    def bottom(p: int, *mappings: tuple[dict[tuple[int, int], int], int]):
         return PSquareSide(p, Direction.down(), *mappings)
 
     @staticmethod
-    def right(p: int, *mappings: tuple[dict[tuple[int, int], Numeric], Numeric]):
+    def right(p: int, *mappings: tuple[dict[tuple[int, int], int], int]):
         return PSquareSide(p, Direction.right(), *mappings)
 
-    def __init__(self, p: int, direction: Direction, *mappings: tuple[dict[tuple[int, int], Numeric], Numeric]):
+    def __init__(self, p: int, direction: Direction, *mappings: tuple[dict[tuple[int, int], int], int]):
         self.p = p
         self.direction = direction
         self.mappings = list(mappings)
@@ -130,7 +129,7 @@ class PSquareSeed:
         self, p: int,
         left_seed: PSquareSide = None,
         top_seed: PSquareSide = None,
-        start_vals: dict[tuple[int, int], Numeric] = None,
+        start_vals: dict[tuple[int, int], int] = None,
         is_terminus: bool = False,
     ):
         self.p = p
@@ -139,7 +138,7 @@ class PSquareSeed:
         self.start_vals = or_else(start_vals, {})
         self.is_terminus = is_terminus
 
-    def get_equation_mapping(self, x: int, y: int) -> tuple[dict[tuple[int, int], Numeric], Numeric] | None:
+    def get_equation_mapping(self, x: int, y: int) -> tuple[dict[tuple[int, int], int], int] | None:
         if x == 0:
             side = self.top_seed
             base_mapping = side[y]
@@ -185,7 +184,7 @@ class PSquareResult:
         return f'PSquareResult(p={self.p},linear_system={self.linear_system})'
 
     @staticmethod
-    def extract_mapping(eq: MultiDimensionalEquation) -> tuple[dict[tuple[int, int], Numeric], Numeric]:
+    def extract_mapping(eq: MultiDimensionalEquation) -> tuple[dict[tuple[int, int], int], int]:
         result = {}
         for m, position, coefficient in eq:
             if coefficient == 0:
@@ -220,9 +219,9 @@ class PSquareResult:
         return PSquareSide.bottom(self.p, *mappings)
 
     @staticmethod
-    def extract_known(eq: MultiDimensionalEquation[tuple[int, int]]) -> tuple[tuple[int, int] | None, Numeric | None]:
+    def extract_known(eq: MultiDimensionalEquation[tuple[int, int]]) -> tuple[tuple[int, int] | None, int | None]:
         coordinates: tuple[int, int] | None = None
-        coefficient: Numeric | None = None
+        coefficient: int | None = None
         for _, coord, coeff in eq:
             if coeff == 0:
                 continue
@@ -234,7 +233,7 @@ class PSquareResult:
         return coordinates, coefficient
 
     @property
-    def additional_values(self) -> dict[tuple[int, int], Numeric]:
+    def additional_values(self) -> dict[tuple[int, int], int]:
         result = {}
         for _, eq in self.linear_system:
             coordinates, coefficient = self.extract_known(eq)
@@ -246,7 +245,7 @@ class PSquareResult:
         return result
 
     @property
-    def known_values(self) -> dict[tuple[int, int], Numeric]:
+    def known_values(self) -> dict[tuple[int, int], int]:
         if self.__known_values is not None:
             return self.__known_values
 
@@ -263,7 +262,7 @@ class PSquareResult:
                     self.__known_values[coordinates] /= coefficient
         return self.__known_values
 
-    def get_values(self) -> list[list[Numeric]]:
+    def get_values(self) -> list[list[int]]:
         known_values = self.known_values
         if len(known_values) < self.p**2:
             raise NotEnoughInformation
@@ -278,7 +277,7 @@ class PSquareResult:
             result.append(row)
         return result
 
-    def with_values(self, *values: tuple[tuple[int, int], Numeric]):
+    def with_values(self, *values: tuple[tuple[int, int], int]):
         return PSquareResult(
             self.p,
             LinearSystem(
@@ -336,22 +335,22 @@ def get_left_seed(current_row: list[PSquareResult], n: int = None):
     return current_row[n-1].right
 
 
-def solve_full_system(p: int):
+def solve_full_system(p: int) -> Point:
     overall_result = []
     while len(overall_result) < p:
         current_row = []
         while len(current_row) < min(len(overall_result), p-len(overall_result)):
             coordinates = (len(overall_result), len(current_row))
             source_vals = overall_result[coordinates[1]][coordinates[0]].get_values()
-            current_start_vals = {}
+            equation_mappings = []
+            variables = []
             for n in range(p):
                 for m in range(p):
-                    current_start_vals[(n, m)] = source_vals[m][n]
-            left_seed = get_left_seed(current_row)
-            top_seed = get_top_seed(overall_result, len(current_row))
-            current_row.append(p_square(PSquareSeed(
-                p, left_seed=left_seed, top_seed=top_seed, start_vals=current_start_vals
-            )))
+                    variables.append((n, m))
+                    equation_mappings.append(({(n, m): 1}, source_vals[m][n]))
+            current_row.append(PSquareResult(
+                p, LinearSystem(*map(lambda x: MultiDimensionalEquation(x[0], x[1], variables), equation_mappings))
+            ))
         if len(current_row) + len(overall_result) == p:
             overall_result.append(current_row)
             continue

@@ -3,13 +3,11 @@ from abc import abstractmethod
 from typing import List, TypeVar, Generic
 
 from algebra.expression import PolynomialExpression, SolutionType
-from algebra.linear.utils import IndexedMapIterator
+from algebra.linear.utils import IndexedMapIterator, Profiler
 from algebra.solvable import Solvable, Condition, boundaries_linear, \
     solve_linear_inequality
-from custom_numbers.exact.rational_number import RationalNumber
 from custom_numbers.types import Numeric
 from general.interval import Interval
-from general.vector import Vector
 
 
 class LinearSolvable(Solvable[PolynomialExpression, SolutionType]):
@@ -63,25 +61,18 @@ class LinearInequality(LinearSolvable[Interval]):
 IndexType = TypeVar('IndexType')
 
 
-class MultiDimensionalEquation(Vector, Generic[IndexType]):
+class MultiDimensionalEquation(Generic[IndexType]):
     @staticmethod
-    def of_mapping(mapping: dict[IndexType, Numeric], val: Numeric) -> MultiDimensionalEquation[IndexType]:
+    def of_mapping(mapping: dict[IndexType, int], val: int) -> MultiDimensionalEquation[IndexType]:
         return MultiDimensionalEquation(mapping, val, sorted(mapping.keys()))
 
     def __init__(
-        self, variable_mapping: dict[IndexType, Numeric], value: Numeric,
+        self, variable_mapping: dict[IndexType, int], value: int,
         variables: list[IndexType],
     ):
         self.variables = variables
-        Vector.__init__(self, *map(
-            lambda v: RationalNumber.of(variable_mapping[v])
-            if v in variable_mapping
-            else RationalNumber.of(0),
-            self.variables
-        ), value)
-        self.lookup = {}
-        for i, val in enumerate(variables):
-            self.lookup[val] = i
+        self.variable_mapping = variable_mapping
+        self.value = value
 
     def __str__(self):
         terms = []
@@ -93,33 +84,22 @@ class MultiDimensionalEquation(Vector, Generic[IndexType]):
 
     def __iter__(self):
         return IndexedMapIterator(
-            lambda v: self.coefficients[self.lookup[v]]
-            if v in self.lookup
-            else 0,
+            lambda v: self.val(v),
             self.variables
         )
 
-    @property
-    def value(self):
-        return self.coefficients[-1]
-
-    @property
-    def mapping(self):
-        result = {}
-        for v in self.variables:
-            result[v] = self.val(v)
-        return result
+    def __getitem__(self, item):
+        if item == len(self.variables):
+            return self.value
+        v = self.variables[item]
+        if v in self.variable_mapping:
+            return self.variable_mapping[v]
+        return 0
 
     def append_vars(self, variables: list[IndexType]):
         for v in variables:
             if v not in self.variables:
-                self.lookup[v] = len(self.variables)
                 self.variables.append(v)
-        self.coefficients = self.coefficients[:-1] + [0]*(len(self.variables)-len(self.coefficients)+1) + [self.value]
-
-    @property
-    def non_zero_count(self):
-        return len(list(filter(lambda x: x != 0, self.coefficients[:-1])))
 
     def __normalized_coefficients(self):
         divisor = 0
@@ -150,45 +130,61 @@ class MultiDimensionalEquation(Vector, Generic[IndexType]):
         return item in self.variables
 
     def val(self, item):
-        if item not in self.lookup:
-            return RationalNumber()
-        return self.coefficients[self.lookup[item]]
-
-    def of_vector(self, base_vector: Vector):
-        new_mapping = {}
-        for i, val in enumerate(base_vector.coefficients[:-1]):
-            new_mapping[self.variables[i]] = val
-        return MultiDimensionalEquation(
-            new_mapping, base_vector[-1], self.variables
-        )
+        if item not in self.variable_mapping:
+            return 0
+        return self.variable_mapping[item]
 
     def with_variables(self, variables: list[IndexType]):
-        result_mapping = {}
-        result_variables = variables.copy()
-        for v in set(self.variables + variables):
-            result_mapping[v] = self.val(v)
-            if v not in result_variables:
-                result_variables.append(v)
-        return MultiDimensionalEquation(result_mapping, self.value, variables)
+        with Profiler('Append variables'):
+            result_mapping = {}
+            result_variables = variables.copy()
+            for v in set(self.variables + variables):
+                result_mapping[v] = self.val(v)
+                if v not in result_variables:
+                    result_variables.append(v)
+            return MultiDimensionalEquation(result_mapping, self.value, variables)
 
     def __add__(self, other):
-        if not isinstance(other, MultiDimensionalEquation) \
-                or self.variables != other.variables:
-            raise NotImplementedError
-        return self.of_vector(Vector.__add__(self, other))
+        with Profiler('Addition'):
+            if not isinstance(other, MultiDimensionalEquation) \
+                    or self.variables != other.variables:
+                raise NotImplementedError
+            result_mapping = {}
+            for _, v, c in self:
+                result_mapping[v] = c + other.val(v)
+            return MultiDimensionalEquation(result_mapping, self.value + other.value, self.variables)
+
+    def __sub__(self, other):
+        with Profiler('Subtraction'):
+            if not isinstance(other, MultiDimensionalEquation) \
+                    or self.variables != other.variables:
+                raise NotImplementedError
+            result_mapping = {}
+            for _, v, c in self:
+                result_mapping[v] = c - other.val(v)
+            return MultiDimensionalEquation(result_mapping, self.value - other.value, self.variables)
 
     def __rmul__(self, other):
-        return self.of_vector(Vector.__rmul__(self, other))
+        with Profiler('Scaling'):
+            if other == 1:
+                return self
+            result_mapping = {}
+            for _, v, c in self:
+                result_mapping[v] = other * c
+            return MultiDimensionalEquation(result_mapping, other * self.value, self.variables)
 
-    def __truediv__(self, other):
-        return self.of_vector(Vector.__rmul__(
-            self, RationalNumber.of(other).flip()
-        ))
+    def __neg__(self):
+        with Profiler('Negating'):
+            result_mapping = {}
+            for _, v, c in self:
+                result_mapping[v] = -c
+            return MultiDimensionalEquation(result_mapping, -self.value, self.variables)
 
     @property
     def first_non_zero(self):
-        for i, _, c in self:
-            if c != 0:
-                return i
-        return len(self.variables) if self.value != 0 \
-            else len(self.variables) + 1
+        with Profiler('Looking up first non zero'):
+            for i, _, c in self:
+                if c != 0:
+                    return i
+            return len(self.variables) if self.value != 0 \
+                else len(self.variables) + 1
