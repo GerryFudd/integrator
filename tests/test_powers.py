@@ -1,10 +1,10 @@
 from algebra.linear.powers import solve_full_system
-from algebra.linear.subspace import Point
 from algebra.linear.utils import TimingContext
+from custom_numbers.exact.rational_number import RationalNumber
 
 
-def check_solution(result: Point, p: int):
-    for x, y in result.variable_list:
+def check_solution(result: dict[tuple[int, int], int | RationalNumber], p: int):
+    for x, y in result.keys():
         if x + y >= p**2:
             assert result[(x, y)] == 0
         if x % p != 0 or y % p != 0:

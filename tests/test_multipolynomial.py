@@ -325,9 +325,7 @@ class TestMultipolynomialPower(TestCase):
             )
             candidate[candidate_pos] = coeff
 
-        print(candidate)
         result = factor * candidate
-        print(result)
         assert result == Multipolynomial(
             ['x', 'y', 'z'],
             [
@@ -534,7 +532,6 @@ class TestMultipolynomialPower(TestCase):
         # ((a + b)^2 - 2(a + b)c + c^2)
         # a^2 + b^2 + c^2 + 2ab - 2ac - 2bc
         z = x + c2
-        print(z)
         assert z == Multipolynomial(
             ['a', 'b', 'c'], [
                 [[0, 0, 1], [1]],

@@ -1,18 +1,16 @@
 from unittest import TestCase
 
-from algebra.linear.subspace import Point, \
-    LinearSystem, InconsistentLinearSystem
-from custom_numbers.exact.rational_number import RationalNumber
+from algebra.linear.subspace import LinearSystem, InconsistentLinearSystem, KnownValue
 
 
 def test_solves_system():
     linear_system = LinearSystem.of(['x', 'y'], [[1, 2, 3], [0, 2, 4]])
-    assert linear_system.solve() == Point.builder().map('x', -1).map('y', 2).build()
+    assert linear_system.solve().known_values() == {'x': KnownValue('x', -1), 'y': KnownValue('y', 2)}
 
 
 def test_solves_system_with_rows_reversed():
     linear_system = LinearSystem.of(['x', 'y'], [[0, 2, 4], [1, 2, 3]])
-    assert linear_system.solve() == Point.builder().map('x', -1).map('y', 2).build()
+    assert linear_system.solve().known_values() == {'x': KnownValue('x', -1), 'y': KnownValue('y', 2)}
 
 
 def test_solves_system_with_indeterminate_variables():
@@ -33,7 +31,7 @@ def test_solves_system_with_indeterminate_variables():
 
 
 def test_provides_rational_solutions():
-    assert LinearSystem.of(['x'], [[3, 1]]).solve() == Point.builder().map('x', RationalNumber(1, 3)).build()
+    assert LinearSystem.of(['x'], [[3, 1]]).solve().known_values() == {'x': KnownValue('x', 1, 3)}
 
 
 class TestLinearSystem(TestCase):

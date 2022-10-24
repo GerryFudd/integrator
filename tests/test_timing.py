@@ -42,11 +42,11 @@ def test_with_timing_metrics():
 def test_re_use_metric_name():
     with TimingContext.get() as overall:
         with Profiler('foo'):
-            time.sleep(0.125)
+            time.sleep(0.062)
         with Profiler('bar'):
-            time.sleep(0.005)
+            time.sleep(0.063)
             with Profiler('foo'):
-                time.sleep(0.063)
+                time.sleep(0.125)
         with Profiler('foo'):
             time.sleep(0.063)
 
@@ -54,12 +54,12 @@ def test_re_use_metric_name():
     assert len(result.children) == 2
     foo = result.children[0]
     assert foo.name == 'foo'
-    assert foo.duration_ms >= 188
+    assert foo.duration_ms >= 125
     bar = result.children[1]
     assert len(bar.children) == 1
     bar_foo = bar.children[0]
     assert bar_foo.name == 'foo'
-    assert bar.duration_ms >= 68
+    assert bar.duration_ms >= 188
     assert foo.duration_ms + bar.duration_ms <= result.duration_ms < foo.duration_ms + bar.duration_ms + bar_foo.duration_ms
 
 

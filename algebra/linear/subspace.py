@@ -3,83 +3,48 @@ from __future__ import annotations
 from typing import Generic
 
 from algebra.linear.equations import MultiDimensionalEquation, IndexType
-from algebra.linear.utils import IndexedMapIterator, Profiler
+from algebra.linear.utils import Profiler
+from custom_numbers.exact.rational_number import RationalNumber
 from custom_numbers.utils import gcd
 
 
-class PointBuilder(Generic[IndexType]):
-    def __init__(self):
-        self.mapping = {}
-        self.list: list[IndexType] = []
-
-    def __setitem__(self, key, value):
-        self.mapping[key] = value
-        if key not in self.list:
-            self.list.append(key)
-
-    def map(self, key: IndexType, value: int) -> PointBuilder:
-        self[key] = value
-        return self
-
-    def build(self):
-        return Point[IndexType](self.mapping, self.list)
-
-
-class Point(Generic[IndexType]):
-    @staticmethod
-    def builder():
-        return PointBuilder()
-
-    def __init__(
-        self,
-        variable_mapping: dict[IndexType, int],
-        variable_list: list[IndexType]
-    ):
-        self.variable_mapping = variable_mapping
-        self.variable_list = variable_list
+class KnownValue(Generic[IndexType]):
+    def __init__(self, variable: IndexType, equals_value: int, coefficient: int = 1):
+        self.coefficient = coefficient
+        self.equals_value = equals_value
+        self.variable = variable
 
     def __str__(self):
-        return ' + '.join(map(
-            lambda x: f'{x[2]}{x[1]}',
-            self,
-        ))
+        return f'{self.coefficient}{self.variable}={self.equals_value}'
 
     def __repr__(self):
-        assignment_list = ",".join(map(
-            lambda v: f'{v}={self.variable_mapping[v]}',
-            self.variable_list,
-        ))
-        return f'Point({assignment_list})'
+        return f'KnownValue(variable={self.variable},equals_value={self.equals_value},coefficient={self.coefficient})'
 
     def __eq__(self, other):
-        if not isinstance(other, Point):
-            return False
-        return self.variable_mapping == other.variable_mapping
-
-    def __iter__(self):
-        return IndexedMapIterator(
-            lambda v: self[v],
-            self.variable_list
-        )
-
-    def __add__(self, other):
-        if not isinstance(other, Point):
-            raise NotImplementedError
-        result_mapping = self.variable_mapping.copy()
-        for v in other.variable_list:
-            if v in self.variable_list:
-                result_mapping[v] = self[v] + other[v]
-            else:
-                result_mapping[v] = other[v]
-        return Point(result_mapping, self.variable_list)
+        return isinstance(other, KnownValue) and self.variable == other.variable \
+               and self.equals_value * other.coefficient == other.equals_value * self.coefficient
 
     def __hash__(self):
-        return hash((self.variable_list, self.variable_mapping))
+        d = gcd(self.equals_value, self.coefficient)
 
-    def __getitem__(self, item):
-        return self.variable_mapping[item] \
-            if item in self.variable_mapping \
-            else 0
+        return hash((self.equals_value//d, self.coefficient//d, self.variable, 'KnownValue'))
+
+    def reduced(self) -> tuple[int, int]:
+        if self.coefficient == 1:
+            return self.equals_value, self.coefficient
+        d = gcd(self.equals_value, self.coefficient)
+        return self.equals_value//d, self.coefficient//d
+
+    @property
+    def value(self):
+        if self.coefficient == 1:
+            return self.equals_value
+        a, b = divmod(self.equals_value, self.coefficient)
+        if b == 0:
+            self.coefficient = 1
+            self.equals_value = a
+            return a
+        return RationalNumber(self.equals_value, self.coefficient)
 
 
 class LinearSystem(Generic[IndexType]):
@@ -200,15 +165,21 @@ class LinearSystem(Generic[IndexType]):
                 independent_equations = self.equations[:le.last_index]
         return LinearSystem(*independent_equations)
 
-    def as_point(self) -> Point | None:
-        if len(self.equations) < len(self.variables):
-            return None
-        result = Point.builder()
-        for i, eq in enumerate(self.equations):
-            if eq[i] != 1:
-                return None
-            result.map(self.variables[i], eq.value)
-        return result.build()
+    def known_values(self) -> dict[IndexType, KnownValue[IndexType]]:
+        result = {}
+        for _, eq in self:
+            candidate = None
+            for v, c in eq.variable_mapping.items():
+                if c == 0:
+                    continue
+                if candidate is not None:
+                    candidate = None
+                    break
+                else:
+                    candidate = KnownValue(v, eq.value, c)
+            if candidate is not None:
+                result[candidate.variable] = candidate
+        return result
 
 
 class InconsistentLinearSystem(Exception):

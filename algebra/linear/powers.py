@@ -1,5 +1,6 @@
 from algebra.linear.equations import MultiDimensionalEquation
-from algebra.linear.subspace import LinearSystem, Point
+from algebra.linear.subspace import LinearSystem, KnownValue
+from custom_numbers.exact.rational_number import RationalNumber
 
 
 class NotEnoughInformation(Exception):
@@ -174,9 +175,8 @@ class PSquareResult:
     ):
         self.p = p
         self.linear_system: LinearSystem[tuple[int, int]] = linear_system
-        self.__known_values = None
+        self.__known_values: dict[tuple[int, int], KnownValue[tuple[int, int]]] | None = None
 
-        # additional_values: dict[tuple[int, int], Numeric] = None,
     def __str__(self):
         return str(self.linear_system)
 
@@ -245,37 +245,16 @@ class PSquareResult:
         return result
 
     @property
-    def known_values(self) -> dict[tuple[int, int], int]:
-        if self.__known_values is not None:
-            return self.__known_values
-
-        as_point = self.linear_system.as_point()
-        if as_point is not None:
-            self.__known_values = as_point.variable_mapping
-            return self.__known_values
-        self.__known_values = {}
-        for _, eq in self.linear_system:
-            coordinates, coefficient = self.extract_known(eq)
-            if coordinates is not None:
-                self.__known_values[coordinates] = eq.value
-                if coefficient != 1:
-                    self.__known_values[coordinates] /= coefficient
+    def known_values(self) -> dict[tuple[int, int], KnownValue[tuple[int, int]]]:
+        if self.__known_values is None:
+            self.__known_values = self.linear_system.known_values()
         return self.__known_values
 
-    def get_values(self) -> list[list[int]]:
+    def get_values(self) -> dict[tuple[int, int], KnownValue[tuple[int, int]]]:
         known_values = self.known_values
         if len(known_values) < self.p**2:
             raise NotEnoughInformation
-        result = []
-        while len(result) < self.p:
-            row = []
-            while len(row) < self.p:
-                new_point = (len(result), len(row))
-                if new_point not in known_values:
-                    raise NotEnoughInformation
-                row.append(known_values[new_point])
-            result.append(row)
-        return result
+        return known_values
 
     def with_values(self, *values: tuple[tuple[int, int], int]):
         return PSquareResult(
@@ -335,7 +314,7 @@ def get_left_seed(current_row: list[PSquareResult], n: int = None):
     return current_row[n-1].right
 
 
-def solve_full_system(p: int) -> Point:
+def solve_full_system(p: int) -> dict[tuple[int, int], int | RationalNumber]:
     overall_result = []
     while len(overall_result) < p:
         current_row = []
@@ -347,7 +326,8 @@ def solve_full_system(p: int) -> Point:
             for n in range(p):
                 for m in range(p):
                     variables.append((n, m))
-                    equation_mappings.append(({(n, m): 1}, source_vals[m][n]))
+                    value, coefficient = source_vals[(m, n)].reduced()
+                    equation_mappings.append(({(n, m): coefficient}, value))
             current_row.append(PSquareResult(
                 p, LinearSystem(*map(lambda x: MultiDimensionalEquation(x[0], x[1], variables), equation_mappings))
             ))
@@ -384,7 +364,7 @@ def solve_full_system(p: int) -> Point:
             additional_values = new_values
 
         overall_result.append(current_row)
-    result = Point.builder()
+    result: dict[tuple[int, int], int | RationalNumber] = {}
     for n in range(p**2):
         for m in range(p**2):
             a, b = divmod(n, p)
@@ -393,5 +373,5 @@ def solve_full_system(p: int) -> Point:
             if len(current_row) <= c:
                 continue
             current_square_values = current_row[c].known_values
-            result.map((n, m), current_square_values[(b, d)])
-    return result.build()
+            result[(n, m)] = current_square_values[(b, d)].value
+    return result
